@@ -1,0 +1,343 @@
+ AS V1.42 Beta [Bld 82] - source file POLY_MUSIK.asm - page 1 - 4/24/2012 16:42:56
+
+
+       1/       0 :                     ; POLY-COMPUTER	880
+       2/       0 :                     ;
+       3/       0 :                     ; 10.3.1. 10.3.2. Der POLY-COMPUTER macht Musik
+       4/       0 :                     ; Arbeitshandbuch, S. 223-241
+       5/       0 :                     ;
+       6/       0 :                     ; assemblieren mit Arnold-Assembler www.alfsembler.de
+       7/       0 :                     ; vp120210
+       8/       0 :                     ;
+       9/       0 :                     	cpu	z80
+      10/       0 :                     
+      11/       0 :                     ;*************************************************************************
+      12/       0 :                     ;
+      13/       0 :                     ; MUSIKPROGRAMM
+      14/       0 :                     ;
+      15/       0 :                     ;*************************************************************************
+      16/    4000 :                     	ORG 	4000H
+      17/    4000 : 3E 25               	LD 	A,25H 		; CTC-KANAL 1 ALS TIMER PROGRAMMIEREN
+      18/    4002 : D3 89               	OUT 	(CTC1),A 	; ZUR BESTIMMUNG DER TONDAUER
+      19/    4004 : 3E 40               	LD 	A,40H 		; ZEITKONSTANTE FUER 1/128 SEKUNDE
+      20/    4006 : D3 89               	OUT 	(CTC1),A
+      21/    4008 : 21 00 41            	LD 	HL,4100H 	; ZEIGER ZUM LESEN DER "NOTEN"
+      22/    400B : 7E                  MUS1 	LD 	A,(HL) 		; TONDAUER LADEN
+      23/    400C : 23                  	INC 	HL
+      24/    400D : FE 00               	CP 	00H 		; ENDE DER MELODIE?
+      25/    400F : 28 36               	JR	Z,ENDE 		; FERTIG!
+      26/    4011 : 4F                  	LD 	C,A 		; DAUER DES TONES IN C
+      27/    4012 : 7E                  MUS2 	LD 	A,(HL) 		; KODE FUER DIE TONHOEHE
+      28/    4013 : FE FF               	CP 	0FFH 		; PAUSE?
+      29/    4015 : 28 15               	JR	Z,MUS3 		; PAUSE!
+      30/    4017 : E5                  	PUSH 	HL
+      31/    4018 : 26 40               	LD 	H,40H
+      32/    401A : C6 80               	ADD 	A,80H 		; ZEIGER FUER TONHOEHENTABELLE
+      33/    401C : 6F                  	LD 	L,A
+      34/    401D : 46                  	LD 	B,(HL) 		; ZEITKONSTANTE N13
+      35/    401E : 10 FE               	DJNZ 	$ 		; ZEITSCHLEIFE Z13
+      36/    4020 : 23                  	INC 	HL
+      37/    4021 : 46                  	LD 	B,(HL) 		; ZEITKONSTANTE N17
+      38/    4022 : 00                  MUSZ 	NOP
+      39/    4023 : 10 FD               	DJNZ 	MUSZ
+      40/    4025 : E1                  	POP 	HL 		; ZEIGER FUER "NOTEN"
+      41/    4026 : DB 82               	IN 	A,(PIOD2) 	; MAGNETBANDANSCHLUSS
+      42/    4028 : EE 04               	XOR 	04H 		; T/2 VERGANGEN
+      43/    402A : D3 82               	OUT 	(PIOD2),A
+      44/    402C : DB 89               MUS3 	IN 	A,(CTC1) 	; TONDAUER
+      45/    402E : AA                  	XOR 	D 		; VERGLEICH MIT LETZTEN WERT
+      46/    402F : CB 6F               	BIT 	5,A 		; AENDERUNG7
+      47/    4031 : 20 06               	JR	NZ,MUS4 	; JA!
+      48/    4033 : 06 03               	LD 	B,N1 		; LAUFZEITKOMPENSATION
+      49/    4035 : 10 FE               	DJNZ 	$
+      50/    4037 : 18 D9               	JR 	MUS2 		; NAECHSTES T/2
+      51/    4039 : AA                  MUS4 	XOR 	D
+      52/    403A : 57                  	LD 	D,A 		; CTC-WERT IN D ABSPEICHERN
+      53/    403B : 0D                  	DEC 	C 		; TONDAUERZAEHLER
+      54/    403C : 28 06               	JR	Z,MUS5 		; FERTIG MIT DIESER "NOTE"
+      55/    403E : 06 03               	LD 	B,N1 		; LAUFZEITKOMPENSATION
+      56/    4040 : 10 FE               	DJNZ 	$
+      57/    4042 : 18 CE               	JR 	MUS2
+      58/    4044 : 23                  MUS5 	INC 	HL
+      59/    4045 : 18 C4               	JR 	MUS1
+      60/    4047 : 76                  ENDE 	HALT 			; FERTIG MIT INTERPRETATION DER "NOTEN"
+ AS V1.42 Beta [Bld 82] - source file POLY_MUSIK.asm - page 2 - 4/24/2012 16:42:56
+
+
+      61/    4048 : =89H                CTC1 	EQU 	89H 		; ADRESSE CTC-KANAL 1
+      62/    4048 : =82H                PIOD2 	EQU 	82H 		; ADRESSE MAGNETBANDANSCHLUSS
+      63/    4048 : =3H                 N1 	EQU 	3
+      64/    4048 : =5H                 N2 	EQU 	5
+      65/    4048 :                     ;
+      66/    4048 :                     ;	TABELLE DER TONHOEHEN
+      67/    4048 :                     ;
+      68/    4080 :                     	ORG 	4080H
+      69/    4080 : 8C                  	DB	8CH		;a
+      70/    4081 : 04                  	DB	04H
+      71/    4082 : 83                  	DB	83H
+      72/    4083 : 04                  	DB	04H
+      73/    4084 : 70                  	DB	70H
+      74/    4085 : 0C                  	DB	0CH
+      75/    4086 : 75                  	DB	75H
+      76/    4087 : 02                  	DB	02H
+      77/    4088 : 5F                  	DB	5FH
+      78/    4089 : 0D                  	DB	0DH
+      79/    408A : 61                  	DB	61H
+      80/    408B : 06                  	DB	06H
+      81/    408C : 56                  	DB	56H
+      82/    408D : 0A                  	DB	0AH
+      83/    408E : 4C                  	DB	4CH
+      84/    408F : 0C                  	DB	0CH
+      85/    4090 : 53                  	DB	53H
+      86/    4091 : 02                  	DB	02H
+      87/    4092 : 4C                  	DB	4CH
+      88/    4093 : 03                  	DB	03H
+      89/    4094 : 44                  	DB	44H
+      90/    4095 : 05                  	DB	05H
+      91/    4096 : 3B                  	DB	3BH
+      92/    4097 : 08                  	DB	08H
+      93/    4098 : 31                  	DB	31H
+      94/    4099 : 0C                  	DB	0CH
+      95/    409A : 33                  	DB	33H
+      96/    409B : 07                  	DB	07H
+      97/    409C : 34                  	DB	34H
+      98/    409D : 03                  	DB	03H
+      99/    409E : 2C                  	DB	2CH
+     100/    409F : 06                  	DB	06H
+     101/    40A0 : 22                  	DB	22H
+     102/    40A1 : 0A                  	DB	0AH
+     103/    40A2 : 25                  	DB	25H
+     104/    40A3 : 05                  	DB	05H
+     105/    40A4 : 20                  	DB	20H
+     106/    40A5 : 07                  	DB	07H
+     107/    40A6 : 22                  	DB	22H
+     108/    40A7 : 03                  	DB	03H
+     109/    40A8 : 1F                  	DB	1FH
+     110/    40A9 : 03                  	DB	03H
+     111/    40AA : 13                  	DB	13H
+     112/    40AB : 0A                  	DB	0AH
+     113/    40AC : 0F                  	DB	0FH
+     114/    40AD : 0B                  	DB	0BH
+     115/    40AE : 13                  	DB	13H
+     116/    40AF : 06                  	DB	06H
+     117/    40B0 : 0E                  	DB	0EH
+     118/    40B1 : 08                  	DB	08H
+     119/    40B2 : 11                  	DB	11H
+     120/    40B3 : 04                  	DB	04H
+ AS V1.42 Beta [Bld 82] - source file POLY_MUSIK.asm - page 3 - 4/24/2012 16:42:56
+
+
+     121/    40B4 : 07                  	DB	07H
+     122/    40B5 : 0A                  	DB	0AH
+     123/    40B6 : 01                  	DB	01H
+     124/    40B7 : 0D                  	DB	0DH
+     125/    40B8 : 07                  	DB	07H
+     126/    40B9 : 07                  	DB	07H
+     127/    40BA : 0D                  	DB	0DH
+     128/    40BB : 01                  	DB	01H
+     129/    40BC : 0A                  	DB	0AH
+     130/    40BD : 02                  	DB	02H
+     131/    40BE : 02                  	DB	02H
+     132/    40BF : 07                  	DB	07H
+     133/    40C0 : 03                  	DB	03H
+     134/    40C1 : 05                  	DB	05H
+     135/    40C2 : 03                  	DB	03H
+     136/    40C3 : 04                  	DB	04H
+     137/    40C4 : 03                  	DB	03H
+     138/    40C5 : 03                  	DB	03H
+     139/    40C6 : 03                  	DB	03H
+     140/    40C7 : 02                  	DB	02H
+     141/    40C8 : 03                  	DB	03H		;a'''
+     142/    40C9 : 01                  	DB	01H
+     143/    40CA :                     
+     144/    4100 :                     	org	4100h
+     145/    4100 :                     
+     146/    4100 :                     ;"Popcorn"
+     147/    4100 : 0C 30               	DB	0CH,030H
+     148/    4102 : 0C FF               	DB	0CH,0FFH
+     149/    4104 : 0C 2C               	DB	0CH,02CH
+     150/    4106 : 0C FF               	DB	0CH,0FFH
+     151/    4108 : 0C 30               	DB	0CH,030H
+     152/    410A : 0C FF               	DB	0CH,0FFH
+     153/    410C : 0C 26               	DB	0CH,026H
+     154/    410E : 0C FF               	DB	0CH,0FFH
+     155/    4110 : 0C 1E               	DB	0CH,01EH
+     156/    4112 : 0C FF               	DB	0CH,0FFH
+     157/    4114 : 0C 26               	DB	0CH,026H
+     158/    4116 : 0C FF               	DB	0CH,0FFH
+     159/    4118 : 0C 18               	DB	0CH,018H
+     160/    411A : 0C FF               	DB	0CH,0FFH
+     161/    411C : 18 FF               	DB	18H,0FFH
+     162/    411E :                     	
+     163/    411E : 0C 30               	DB	0CH,030H
+     164/    4120 : 0C FF               	DB	0CH,0FFH
+     165/    4122 : 0C 2C               	DB	0CH,02CH
+     166/    4124 : 0C FF               	DB	0CH,0FFH
+     167/    4126 : 0C 30               	DB	0CH,030H
+     168/    4128 : 0C FF               	DB	0CH,0FFH
+     169/    412A : 0C 26               	DB	0CH,026H
+     170/    412C : 0C FF               	DB	0CH,0FFH
+     171/    412E : 0C 1E               	DB	0CH,01EH
+     172/    4130 : 0C FF               	DB	0CH,0FFH
+     173/    4132 : 0C 26               	DB	0CH,026H
+     174/    4134 : 0C FF               	DB	0CH,0FFH
+     175/    4136 : 0C 18               	DB	0CH,018H
+     176/    4138 : 0C FF               	DB	0CH,0FFH
+     177/    413A : 18 FF               	DB	18H,0FFH
+     178/    413C : 0C 30               	DB	0CH,030H
+     179/    413E : 0C FF               	DB	0CH,0FFH
+     180/    4140 : 0C 34               	DB	0CH,034H
+ AS V1.42 Beta [Bld 82] - source file POLY_MUSIK.asm - page 4 - 4/24/2012 16:42:56
+
+
+     181/    4142 : 0C FF               	DB	0CH,0FFH
+     182/    4144 : 0C 36               	DB	0CH,036H
+     183/    4146 : 0C FF               	DB	0CH,0FFH
+     184/    4148 : 0C 34               	DB	0CH,034H
+     185/    414A : 0C FF               	DB	0CH,0FFH
+     186/    414C : 0C 36               	DB	0CH,036H
+     187/    414E : 0C FF               	DB	0CH,0FFH
+     188/    4150 : 0C 30               	DB	0CH,030H
+     189/    4152 : 0C FF               	DB	0CH,0FFH
+     190/    4154 : 0C 34               	DB	0CH,034H
+     191/    4156 : 0C FF               	DB	0CH,0FFH
+     192/    4158 : 0C 30               	DB	0CH,030H
+     193/    415A : 0C FF               	DB	0CH,0FFH
+     194/    415C : 0C 34               	DB	0CH,034H
+     195/    415E : 0C FF               	DB	0CH,0FFH
+     196/    4160 : 0C 2C               	DB	0CH,02CH
+     197/    4162 : 0C FF               	DB	0CH,0FFH
+     198/    4164 : 0C 30               	DB	0CH,030H
+     199/    4166 : 0C FF               	DB	0CH,0FFH
+     200/    4168 : 0C 2C               	DB	0CH,02CH
+     201/    416A : 0C FF               	DB	0CH,0FFH
+     202/    416C : 0C 30               	DB	0CH,030H
+     203/    416E : 0C FF               	DB	0CH,0FFH
+     204/    4170 : 0C 26               	DB	0CH,026H
+     205/    4172 : 0C FF               	DB	0CH,0FFH
+     206/    4174 : 0C 30               	DB	0CH,030H
+     207/    4176 : 0C FF               	DB	0CH,0FFH
+     208/    4178 : 18 FF               	DB	18H,0FFH
+     209/    417A :                     
+     210/    417A : 0C 30               	DB	0CH,030H
+     211/    417C : 0C FF               	DB	0CH,0FFH
+     212/    417E : 0C 2C               	DB	0CH,02CH
+     213/    4180 : 0C FF               	DB	0CH,0FFH
+     214/    4182 : 0C 30               	DB	0CH,030H
+     215/    4184 : 0C FF               	DB	0CH,0FFH
+     216/    4186 : 0C 26               	DB	0CH,026H
+     217/    4188 : 0C FF               	DB	0CH,0FFH
+     218/    418A : 0C 1E               	DB	0CH,01EH
+     219/    418C : 0C FF               	DB	0CH,0FFH
+     220/    418E : 0C 26               	DB	0CH,026H
+     221/    4190 : 0C FF               	DB	0CH,0FFH
+     222/    4192 : 0C 18               	DB	0CH,018H
+     223/    4194 : 0C FF               	DB	0CH,0FFH
+     224/    4196 : 18 FF               	DB	18H,0FFH
+     225/    4198 :                     	
+     226/    4198 : 0C 30               	DB	0CH,030H
+     227/    419A : 0C FF               	DB	0CH,0FFH
+     228/    419C : 0C 2C               	DB	0CH,02CH
+     229/    419E : 0C FF               	DB	0CH,0FFH
+     230/    41A0 : 0C 30               	DB	0CH,030H
+     231/    41A2 : 0C FF               	DB	0CH,0FFH
+     232/    41A4 : 0C 26               	DB	0CH,026H
+     233/    41A6 : 0C FF               	DB	0CH,0FFH
+     234/    41A8 : 0C 1E               	DB	0CH,01EH
+     235/    41AA : 0C FF               	DB	0CH,0FFH
+     236/    41AC : 0C 26               	DB	0CH,026H
+     237/    41AE : 0C FF               	DB	0CH,0FFH
+     238/    41B0 : 0C 18               	DB	0CH,018H
+     239/    41B2 : 0C FF               	DB	0CH,0FFH
+     240/    41B4 : 18 FF               	DB	18H,0FFH
+ AS V1.42 Beta [Bld 82] - source file POLY_MUSIK.asm - page 5 - 4/24/2012 16:42:56
+
+
+     241/    41B6 : 0C 30               	DB	0CH,030H
+     242/    41B8 : 0C FF               	DB	0CH,0FFH
+     243/    41BA : 0C 34               	DB	0CH,034H
+     244/    41BC : 0C FF               	DB	0CH,0FFH
+     245/    41BE : 0C 36               	DB	0CH,036H
+     246/    41C0 : 0C FF               	DB	0CH,0FFH
+     247/    41C2 : 0C 34               	DB	0CH,034H
+     248/    41C4 : 0C FF               	DB	0CH,0FFH
+     249/    41C6 : 0C 36               	DB	0CH,036H
+     250/    41C8 : 0C FF               	DB	0CH,0FFH
+     251/    41CA : 0C 30               	DB	0CH,030H
+     252/    41CC : 0C FF               	DB	0CH,0FFH
+     253/    41CE : 0C 34               	DB	0CH,034H
+     254/    41D0 : 0C FF               	DB	0CH,0FFH
+     255/    41D2 : 0C 30               	DB	0CH,030H
+     256/    41D4 : 0C FF               	DB	0CH,0FFH
+     257/    41D6 : 0C 34               	DB	0CH,034H
+     258/    41D8 : 0C FF               	DB	0CH,0FFH
+     259/    41DA : 0C 2C               	DB	0CH,02CH
+     260/    41DC : 0C FF               	DB	0CH,0FFH
+     261/    41DE : 0C 30               	DB	0CH,030H
+     262/    41E0 : 0C FF               	DB	0CH,0FFH
+     263/    41E2 : 0C 2C               	DB	0CH,02CH
+     264/    41E4 : 0C FF               	DB	0CH,0FFH
+     265/    41E6 : 0C 30               	DB	0CH,030H
+     266/    41E8 : 0C FF               	DB	0CH,0FFH
+     267/    41EA : 0C 26               	DB	0CH,026H
+     268/    41EC : 0C FF               	DB	0CH,0FFH
+     269/    41EE : 0C 30               	DB	0CH,030H
+     270/    41F0 : 0C FF               	DB	0CH,0FFH
+     271/    41F2 : 18 FF               	DB	18H,0FFH
+     272/    41F4 :                     
+     273/    41F4 : 0C 30               	DB	0CH,030H
+     274/    41F6 : 0C FF               	DB	0CH,0FFH
+     275/    41F8 : 0C 2C               	DB	0CH,02CH
+     276/    41FA : 0C FF               	DB	0CH,0FFH
+     277/    41FC : 0C 30               	DB	0CH,030H
+     278/    41FE : 54 FF               	DB	54H,0FFH
+     279/    4200 : 0C 18               	DB	0CH,018H
+     280/    4202 : 54 FF               	DB	54H,0FFH
+     281/    4204 : 90 00               	DB	90H,000H
+     282/    4206 : 00                  	DB	00H
+     283/    4207 :                     	END
+ AS V1.42 Beta [Bld 82] - source file POLY_MUSIK.asm - page 6 - 4/24/2012 16:42:56
+
+
+  symbol table (* = unused):
+  ------------------------
+
+*ARCHITECTURE :  i386-unknown-win32 - | *BIGENDIAN :                      0 - |
+*BRANCHEXT :                      0 - | *CASESENSITIVE :                  0 - |
+*CONSTPI :        3.141592653589793 - |  CTC1 :                          89 - |
+*DATE :                   4/24/2012 - |  ENDE :                        4047 C |
+*FALSE :                          0 - | *FULLPMMU :                       1 - |
+*HAS64 :                          1 - | *HASDSP :                         0 - |
+*HASFPU :                         0 - | *HASPMMU :                        0 - |
+*INEXTMODE :                      0 - | *INLWORDMODE :                    0 - |
+*INMAXMODE :                      0 - | *INSRCMODE :                      0 - |
+*INSUPMODE :                      0 - | *LISTON :                         1 - |
+*MACEXP :                         1 - | *MOMCPU :                        80 - |
+*MOMCPUNAME :                   Z80 - |  MUS1 :                        400B C |
+ MUS2 :                        4012 C |  MUS3 :                        402C C |
+ MUS4 :                        4039 C |  MUS5 :                        4044 C |
+ MUSZ :                        4022 C |  N1 :                             3 - |
+*N2 :                             5 - | *NESTMAX :                      100 - |
+*PACKING :                        0 - | *PADDING :                        1 - |
+ PIOD2 :                         82 - | *RELAXED :                        0 - |
+*TIME :                    16:42:56 - | *TRUE :                           1 - |
+*VERSION :                     142F - |
+
+     39 symbols
+     29 unused symbols
+
+ AS V1.42 Beta [Bld 82] - source file POLY_MUSIK.asm - page 7 - 4/24/2012 16:42:56
+
+
+  codepages:
+  ----------
+
+STANDARD (0 changed characters)
+
+
+0.03 seconds assembly time
+
+    284 lines source file
+      2 passes
+      0 errors
+      0 warnings

@@ -1,0 +1,2206 @@
+ AS V1.42 Beta [Bld 82] - source file monitor.asm - page 1 - 4/24/2012 15:50:25
+
+
+       1/       0 :                     ; POLY-COMPUTER 880
+       2/       0 :                     ;
+       3/       0 :                     ; Monitorprogramm des POLY-COMPUTER
+       4/       0 :                     ; Bedienhandbuch, S. 87-156
+       5/       0 :                     ;
+       6/       0 :                     ; assemblieren mit Arnold-Assembler www.alfsembler.de
+       7/       0 :                     ; vp120210
+       8/       0 :                     ;
+       9/       0 :                     	cpu	z80
+      10/       0 :                     
+      11/       0 :                     ;*************************************************************************
+      12/       0 :                     ; 
+      13/       0 :                     ;*************************************************************************
+      14/       0 :                     
+      15/       0 :                     	INCLUDE	EINTRITT.ASM
+(1)    1/       0 :                     ;*************************************************************************
+(1)    2/       0 :                     ;
+(1)    3/       0 :                     ; 	PROGRAMM: U880-MONITOR
+(1)    4/       0 :                     ;
+(1)    5/       0 :                     ; 	COPYRIGHT (C) 1982
+(1)    6/       0 :                     ; 	VEB KOMBINAT POLYTECHNIK UND PRAEZISIONSGERAETE
+(1)    7/       0 :                     ; 	DDR-9023 KARL-MARX-STADT
+(1)    8/       0 :                     ;	MELANCHTHONSTRASSE 4-8
+(1)    9/       0 :                     ;
+(1)   10/       0 :                     ;*************************************************************************
+(1)   11/       0 :                     ;
+(1)   12/       0 :                     ;
+(1)   13/       0 :                     ; INHALT
+(1)   14/       0 :                     ; ======
+(1)   15/       0 :                     ;
+(1)   16/       0 :                     ; DIESES PROGRAMM LAEUFT AUF DEM U880-LERNSYSTEM POLY-COMPUTER 880 DES
+(1)   17/       0 :                     ; VEB POLYTECHNIK UND STELLT DEM NUTZER EINEN KLEINEN MONITOR ZUR UNTER-
+(1)   18/       0 :                     ; STUETZUNG DER PROGRAMMERSTELLUNG ZUR VERFUEGUNG. DAS PROGRAMM ERMOEG-
+(1)   19/       0 :                     ; LICHT ES, UEBER DIE TASTATUR DES LERNSYSTEMS DEN SPEICHER- ODER DEN
+(1)   20/       0 :                     ; REGISTERINHALT ZU UEBERPRUEFEN UND ZU VERAENDERN, EIN PROGRAMM IN DEN
+(1)   21/       0 :                     ; RAM ZU LADEN UND DIESES AUSZUFUEHREN. DIE PROGRAMMTESTUNG WIRD DURCH
+(1)   22/       0 :                     ; EINZELSCHRITTBETRIEB UND BELIEBIG VIELE SOFTWAREPRUEFPUNKTE UNTER-
+(1)   23/       0 :                     ; STUETZT. DATEN KOENNEN AUF EIN MAGNETBANDGERAET AUSGEGEBEN UND VON
+(1)   24/       0 :                     ; DIESEM EINGELESEN WERDEN. IM RAM KOENNEN BEREICHE VERSCHOBEN UND MIT
+(1)   25/       0 :                     ; EINEM DATENMUSTER GEFUELLT WERDEN. DER MONITOR GESTATTET DEN ZUGRIFF
+(1)   26/       0 :                     ; ZU  ALLEN EIN- UND AUSGABEPORTS. DER NUTZER DES SYSTEMS KANN UNTERPRO-
+(1)   27/       0 :                     ; GRAMME ZUR ANSTEUERUNG DER TASTATUR UND DER ANZEIGEEINHEIT DES LERN-
+(1)   28/       0 :                     ; SYSTEMS VERWENDEN, DIE IM MONITORPROGRAMM ENTHALTEN SIND.
+(1)   29/       0 :                     ; DIE VERWENDUNG VON UNTERBRECHUNGEN IST IN ALLEN 3 BETRIEBSARTEN DES
+(1)   30/       0 :                     ; U880 MOEGLICH. NMI IST FUER SYSTEMFUNKTIONEN RESERVIERT.
+(1)   31/       0 :                     ;
+(1)   32/       0 :                     ;
+(1)   33/       0 :                     ; PROGRAMMORGANISATION
+(1)   34/       0 :                     ; ====================
+(1)   35/       0 :                     ;
+(1)   36/       0 :                     ; DAS GESAMTE MONITORPROGRAMM BESTEHT AUS 4 MODULEN. DAS EINTRITTSPRO-
+(1)   37/       0 :                     ; GRAMM BEHANDELT ALLE SINNVOLLEN EINTRITTE IN DAS MONITORPROGRAMM VON
+(1)   38/       0 :                     ; ANWENDERPROGRAMMEN (EINZELSCHRITTBETRIEB, PRUEFPUNKT) ODER NACH RESET.
+(1)   39/       0 :                     ; DAS KONSOLPROGRAMM ERKENNT DIE BETAETIGUNG VON TASTEN UND RUFT ENT-
+(1)   40/       0 :                     ; SPRECHENDE BEARBEITUNGSPROGRAMME AUF. WAEHREND DES WARTENS AUF EINE
+(1)   41/       0 :                     ; EINGABE WIRD DIE ANZEIGEEINHEIT STAENDIG AUFGEFRISCHT. IM AKTIONSPRO-
+(1)   42/       0 :                     ; GRAMM SIND ALLE ROUTINEN ENTHALTEN, DIE DIE EIGENTLICHE REALISIERUNG
+(1)   43/       0 :                     ; DER FUNKTIONEN BEWIRKEN. DAS RAMPROGRAMM ENTHAELT DEFINITIONEN, DIE
+(1)   44/       0 :                     ; SPEICHERPLAETZE FUER DIE ARBEIT DES MONITORS RESERVIEREN.
+(1)   45/       0 :                     ; DAS MONITORPROGRAMM BELEGT 2K BYTE ROM AUF DEN ADRESSEN 0-3FFH UND
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(EINTRITT.ASM) - page 2 - 4/24/2012 15:50:25
+
+
+(1)   46/       0 :                     ; 1000H-13FFH. DIESE AUFTEILUNG GESTATTET DIE VERWENDUNG EINES EIN-
+(1)   47/       0 :                     ; FACHEREN ADRESSDEKODERS. WEITERHIN WIRD DURCH DEN MONITOR DER RAMBE-
+(1)   48/       0 :                     ; REICH 43A0H-43FFH BELEGT. ZUSAETZLICH ZU DEN AUFGEZAEHLTEN PROGRAMMEN
+(1)   49/       0 :                     ; EXISTIERT EINE QUELLDATEI, DIE EINE ANZAHL VON WERTZUWEISUNGEN ENT-
+(1)   50/       0 :                     ; HAELT UND DIE VON ALLEN PROGRAMMEN ALS REFERENZ BENUTZT WIRD.
+(1)   51/       0 :                     ;
+(1)   52/       0 :                     ;*E
+(1)   53/       0 :                     ;*************************************************************************
+(1)   54/       0 :                     ;
+(1)   55/       0 :                     ; 	EINTRITTSPROGRAMM
+(1)   56/       0 :                     ;
+(1)   57/       0 :                     ;*************************************************************************
+(1)   58/       0 :                     ;
+(1)   59/       0 :                     ; 	FUNKTION: BEARBEITET ALLE EINTRITTE IN DAS
+(1)   60/       0 :                     ; 		  MONITORPROGRAMM
+(1)   61/       0 :                     ; 	EINGABEN: NMIZUS
+(1)   62/       0 :                     ; 	AUSGABEN: NMIZUS,PROGZU,VERZWEIGT ZU KONSOL-
+(1)   63/       0 :                     ;		  PROGRAMM
+(1)   64/       0 :                     ; 	EXTERNAL USERSP SYSTSP ANZBER USSP2
+(1)   65/       0 :                     ; 	EXTERNAL BREAKP RAMANF
+(1)   66/       0 :                     ; 	EXTERNAL HR1 NMIZUS TRST KOMDAR
+(1)   67/       0 :                     ; 	EXTERNAL ADRAUS DAAUS
+(1)   68/       0 :                     ; 	EXTERNAL HR4 SYSP24 SYSP26
+(1)   69/       0 :                     ; 	EXTERNAL Z10EM4
+(1)   70/       0 :                     ;*************************************************************************
+(1)   71/       0 :                     ;
+(1)   72/       0 :                     ;	RESET-EINTRITTSPUNKT
+(1)   73/       0 :                     ;
+(1)   74/       0 :                     ;*************************************************************************
+(1)   75/       0 :                     	ORG 	0000H
+(1)   76/       0 : 31 A2 43            	LD 	SP,USSP2 	; SP FUER ANWENDER
+(1)   77/       3 : 01 0C 00            	LD 	BC,PZAHL 	; RAM  INITIALISIEREN
+(1)   78/       6 : 21 D5 00            	LD 	HL,IWERTE 	; WERT-TABELLE
+(1)   79/       9 : 11 DC 43            	LD 	DE,ANZBER 	; RAM-BEREICH
+(1)   80/       C : ED B0               	LDIR 			; RAMINITIALISIERUNG
+(1)   81/       E : 3E 0F               	LD 	A,0FH 		;  KODE FUER OUTPUTMODE
+(1)   82/      10 : D3 81               	OUT 	(PIOC1),A	; PIO1 PROGRAMMIEREN (SEGMENTANSTEUERUNG)
+(1)   83/      12 : 01 83 03            	LD 	BC,300H | PIOC2
+(1)   84/      15 : ED B3               	OTIR 			; PIO2 PROGRAMMIEREN (BITMODE)
+(1)   85/      17 : 3E 01               	LD 	A,01H 		; ANFANGSDRTEN PIO2
+(1)   86/      19 : D3 82               	OUT 	(PIOD2),A 	; DATENAUSGABE
+(1)   87/      1B : 3E 05               MONRM1 	LD 	A,05H 		; KODE FUER CTC (TIMER)
+(1)   88/      1D : D3 88                	OUT 	(CTC),A 	; CTC STARTEN
+(1)   89/      1F : 3E 05                	LD 	A,5 		; ZAEHLKONSTANTE
+(1)   90/      21 : D3 88                	OUT 	(CTC),A
+(1)   91/      23 : F1                   	POP 	AF
+(1)   92/      24 : 18 FE                	JR 	$ 		; WARTEN
+(1)   93/      26 :                     ;*************************************************************************
+(1)   94/      26 :                     ;
+(1)   95/      26 :                     ; 	EINTRITT 	FUER RESTART 5
+(1)   96/      26 :                     ;
+(1)   97/      26 :                     ;*************************************************************************
+(1)   98/      28 :                      	ORG 	28H
+(1)   99/      28 : F5                   	PUSH 	AF
+(1)  100/      29 : 3E 01                	LD 	A,01H
+(1)  101/      2B : 32 E5 43             	LD 	(NMIZUS),A 	; URSACHE EINTRITT MERK.
+(1)  102/      2E : 18 EB                	JR 	MONRM1
+(1)  103/      30 :                     ;*************************************************************************
+(1)  104/      30 :                     ;
+(1)  105/      30 :                     ; 	EINTRITT 	FUER RESTART 6
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(EINTRITT.ASM) - page 3 - 4/24/2012 15:50:25
+
+
+(1)  106/      30 :                     ;
+(1)  107/      30 :                     ;*************************************************************************
+(1)  108/      30 :                      	ORG 	30H
+(1)  109/      30 : F5                   	PUSH 	AF
+(1)  110/      31 : 3E 02                 	LD 	A, 02H 		; URSACHE=PR.PUNKT
+(1)  111/      33 : 32 E5 43             	LD 	(NMIZUS),A
+(1)  112/      36 : 18 E3                	JR 	MONRM1
+(1)  113/      38 :                     ;*************************************************************************
+(1)  114/      38 :                     ; 
+(1)  115/      38 :                     ;	EINTRITTSPUNKT FUER INTERRUPTMODE 0 UND 1
+(1)  116/      38 :                     ;
+(1)  117/      38 :                     ;*************************************************************************
+(1)  118/      38 :                      	ORG 	38H
+(1)  119/      38 : C3 00 40             	JP 	RAMANF
+(1)  120/      3B :                     ;*************************************************************************
+(1)  121/      3B : ED 73 E8 43         NMIM1 	LD 	(HR1),SP 	; SP ABSPEICHERN
+(1)  122/      3F : 31 D4 43             	LD 	SP,SYSTSP 	; SYSTEMSTACKPOINTER
+(1)  123/      42 : F5                   	PUSH 	AF 		; ERSTER REGISTERSATZ
+(1)  124/      43 : C5                   	PUSH 	BC
+(1)  125/      44 : D5                   	PUSH 	DE
+(1)  126/      45 : E5                   	PUSH 	HL
+(1)  127/      46 : 08                   	EX	AF,AF'		; ZWEITER REGISTERSATZ
+(1)  128/      47 : D9                   	EXX
+(1)  129/      48 : F5                   	PUSH 	AF 		; REGISTER ABSPEICHERN
+(1)  130/      49 : C5                   	PUSH 	BC
+(1)  131/      4A : D5                   	PUSH 	DE
+(1)  132/      4B : E5                   	PUSH 	HL
+(1)  133/      4C : ED 57                	LD 	A,I 		; INTERRUPTREG. UND EI
+(1)  134/      4E : 47                   	LD 	B, A
+(1)  135/      4F : 0E 01                	LD 	C,01H
+(1)  136/      51 : EA 56 00             	JP	PE,NMIM2
+(1)  137/      54 : 0E 00                	LD 	C,00H 		; EI=0
+(1)  138/      56 : C5                  NMIM2 	PUSH 	BC 		; I UND EI ABSPEICHERN
+(1)  139/      57 : DD E5                	PUSH 	IX
+(1)  140/      59 : FD E5                	PUSH 	IY
+(1)  141/      5B : 2A E8 43             	LD 	HL,(HR1) 	; SP HOLEN
+(1)  142/      5E : 5E                   	LD 	E, (HL) 	; PC VOM STACK HOLEN
+(1)  143/      5F : 23                   	INC 	HL
+(1)  144/      60 : 56                   	LD 	D,(HL)
+(1)  145/      61 : 23                   	INC 	HL
+(1)  146/      62 : E5                   	PUSH 	HL 		; SP ABSPEICHERN
+(1)  147/      63 : D5                   	PUSH 	DE 		; PC ABSPEICHERN
+(1)  148/      64 : 18 02                	JR 	NMIM3
+(1)  149/      66 :                     ;*************************************************************************
+(1)  150/      66 :                     ;
+(1)  151/      66 :                     ;	EINTRITT 	BEI NMI
+(1)  152/      66 :                     ;
+(1)  153/      66 :                     ;*************************************************************************
+(1)  154/      66 :                     	ORG 	66H
+(1)  155/      66 : 18 D3                	JR 	NMIM1
+(1)  156/      68 :                     ;*************************************************************************
+(1)  157/      68 : 3E 03               NMIM3 	LD 	A,03H
+(1)  158/      6A : D3 88                	OUT 	(CTC),A 	; CTC STOPPEN
+(1)  159/      6C : FD 21 DC 43          	LD 	IY,ANZBER 	; STAENDIGER ZEIGER
+(1)  160/      70 : 3E 41                	LD 	A,41H 		; SCON AUF HOCH
+(1)  161/      72 : D3 82                	OUT 	(PIOD2),A 	; FF1 LOESCHEN
+(1)  162/      74 : 2A E6 43             	LD 	HL,(BREAKP)
+(1)  163/      77 : 3A EE 43             	LD 	A,(HR4) 	; BEFEHLSKODE
+(1)  164/      7A : 77                   	LD 	(HL),A
+(1)  165/      7B : 3A E5 43             	LD 	A,(NMIZUS)	; EINTRITTSURSACHE
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(EINTRITT.ASM) - page 4 - 4/24/2012 15:50:25
+
+
+(1)  166/      7E : 3D                   	DEC 	A
+(1)  167/      7F : 28 11                	JR	Z,BRSYST 	; SYSTEMPRUEFPUNKT
+(1)  168/      81 : 3D                  	DEC  	A
+(1)  169/      82 : 28 1D               	JR	Z,BRUSER  	; ANWENDERPRUEFPUNKT
+(1)  170/      84 : 3D                  	DEC  	A
+(1)  171/      85 : 28 23               	JR	Z,NORST  	; EINZELSCHRITT
+(1)  172/      87 : 3D                  	DEC  	A
+(1)  173/      88 : 28 37               	JR	Z,BREST  	; SCHRITT NACH PRUEFP.
+(1)  174/      8A : 3D                  	DEC  	A
+(1)  175/      8B : 28 31               	JR	Z,JPTRST  	; RESET
+(1)  176/      8D : 11 57 E5            MONINT  LD  	DE,ANMON  	; MONITORTASTE
+(1)  177/      90 : 18 15               	JR  	BRUSM1
+(1)  178/      92 : CD C6 00            BRSYST  CALL  	SPPCKO  	; KORREKTUR SP UND PC
+(1)  179/      95 : 1B                  	DEC  	DE  		; PC STELLEN
+(1)  180/      96 : ED 53 BA 43         	LD  	(SYSP26),DE  	; PC ABSPEICHERN
+(1)  181/      9A : FD 36 09 04         	LD  	(IY+NMIZ),4  	; ZUSTAND MERKEN
+(1)  182/      9E : C3 4B 11            	JP  	Z10EM4  	; ANSPRUNG STEP
+(1)  183/      A1 : CD C6 00            BRUSER  CALL  	SPPCKO  	; ANWENDERPRUEFPUNKT
+(1)  184/      A4 : 11 57 C7            	LD  	DE,ANUSBR
+(1)  185/      A7 : CD AC 02            BRUSM1  CALL  	KOMDAR  	; DATEN NACH ANZ.BEREICH
+(1)  186/      AA : 2A BA 43            NORST  	LD  	HL,(SYSP26)  	; PC
+(1)  187/      AD : E5                  	PUSH  	HL
+(1)  188/      AE : CD 2D 03            	CALL  	ADRAUS  	; ADR. IN ANZEIGE
+(1)  189/      B1 : E1                  	POP  	HL
+(1)  190/      B2 : FD CB 05 9E         	RES  	BIA,(IY+5)
+(1)  191/      B6 : 66                  	LD  	H,(HL)  	; DATEN IN ANZEIGE
+(1)  192/      B7 : CD 38 03            	CALL  	DAAUS
+(1)  193/      BA : FD CB 07 9E         	RES  	BIA,(IY+7)
+(1)  194/      BE : C3 E4 00            JPTRST  JP  	TAST  		; TASTATUR ANSPRINGEN
+(1)  195/      C1 : 11 11 57            BREST  	LD  	DE,ANBREA  	; KODE FUER BREAK
+(1)  196/      C4 : 18 E1               	JR 	BRUSM1
+(1)  197/      C6 :                     ;*************************************************************************
+(1)  198/      C6 :                     ;
+(1)  199/      C6 :                     ; 	FUNKTION: KORRIGIERT SP UND PC
+(1)  200/      C6 :                     ; 	EINGABE: KEINE
+(1)  201/      C6 :                     ; 	AUSGABE: SYSP-24
+(1)  202/      C6 :                     ; 		  SYSP-26
+(1)  203/      C6 :                     ; 	ZERSTOERT: DE,HL
+(1)  204/      C6 :                     ;
+(1)  205/      C6 :                     ;*************************************************************************
+(1)  206/      C6 : 2A BC 43            SPPCKO 	LD 	HL,(SYSP24) 	; SP LADEN
+(1)  207/      C9 : 5E                   	LD 	E,(HL) 		; PC HOLEN
+(1)  208/      CA : 23                   	INC 	HL
+(1)  209/      CB : 56                   	LD 	D,(HL)
+(1)  210/      CC : 23                   	INC 	HL
+(1)  211/      CD : 22 BC 43             	LD 	(SYSP24),HL 	; SP ABSPEICHERN
+(1)  212/      D0 : ED 53 BA 43          	LD 	(SYSP26),DE 	; PC ABSPEICHERN
+(1)  213/      D4 : C9                   	RET
+(1)  214/      D5 :                     ;*E
+(1)  215/      D5 :                     ;*************************************************************************
+(1)  216/      D5 :                     ;
+(1)  217/      D5 :                     ; 	DEFINITIONEN
+(1)  218/      D5 :                     ;
+(1)  219/      D5 :                     ;*************************************************************************
+(1)  220/      D5 : =5711H              ANBREA 	EQU 	5711H
+(1)  221/      D5 : =E557H              ANMON 	EQU 	0E557H
+(1)  222/      D5 : =C757H              ANUSBR 	EQU 	0C757H
+(1)  223/      D5 : =BBH                IOBITS 	EQU 	10111011B
+(1)  224/      D5 : F1                  IWERTE 	DB 	0F1H 		; ANFANGSWERTE FUER ANZEIGE
+(1)  225/      D6 : E7                   	DB 	0E7H
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(EINTRITT.ASM) - page 5 - 4/24/2012 15:50:25
+
+
+(1)  226/      D7 : 43                   	DB 	43H
+(1)  227/      D8 : D6                   	DB 	0D6H
+(1)  228/      D9 : 10                   	DB 	10H
+(1)  229/      DA : F7                   	DB 	0F7H
+(1)  230/      DB : F7                   	DB 	0F7H
+(1)  231/      DC : E7                   	DB 	0E7H
+(1)  232/      DD : 00                   	DB 	Z1 		; ANFANGSZUSTAND DES MONITORS
+(1)  233/      DE : 05                   	DB 	5 		; NMI-ZUSTAND:=RESET
+(1)  234/      DF : 00 00                	DW 	0000H 		; BREAKPOINT GELOESCHT
+(1)  235/      E1 : =CH                 PZAHL 	EQU 	12
+(1)  236/      E1 : CF                   	DB 	0CFH
+(1)  237/      E2 : BB                   	DB 	IOBITS
+(1)  238/      E3 : 07                   	DB 	07H
+(1)  239/      E4 :                     ;*INCLUDE LERNSYSTEMEQU.S
+(1)  240/      E4 :                     ;	END
+(1)  241/      E4 :                     
+(1)  242/      E4 :                     
+      16/      E4 :                     	INCLUDE KONSOLE.ASM
+(1)    1/      E4 :                     ;*************************************************************************
+(1)    2/      E4 :                     ;
+(1)    3/      E4 :                     ;
+(1)    4/      E4 :                     ;		LERNSYSTEMKONSOLE
+(1)    5/      E4 :                     ;
+(1)    6/      E4 :                     ;
+(1)    7/      E4 :                     ;*************************************************************************
+(1)    8/      E4 :                     ;
+(1)    9/      E4 :                     ;
+(1)   10/      E4 :                     ;FUNKTION: FUEHRT ABFRAGE DER TASTUTUR AUS UND VERZWEIGT IN ABHAENGIG-
+(1)   11/      E4 :                     ;	    KEIT VON DER EINGABE. DIE ANZEIGEEINHEIT WIRD STAENDIG AUFGE-
+(1)   12/      E4 :                     ;	   FRISCHT.
+(1)   13/      E4 :                     ;EINGABEN: DATEN IN ANZBER
+(1)   14/      E4 :                     ;AUSGABEN: PROGZU
+(1)   15/      E4 :                     ;ZERSTOERT: AF,BC,DE,HL,TASTBI
+(1)   16/      E4 :                     ;
+(1)   17/      E4 :                     ;
+(1)   18/      E4 :                     ;*************************************************************************
+(1)   19/      E4 :                     ;	GLOBAL 	TAST TASTU TASTB1 KONSOL KONTAS
+(1)   20/      E4 :                     ;	EXTERNAL ZUSTAB HR3 KOMDAR
+(1)   21/      E4 :                     ;	EXTERNAL ANZBER TASTBI PROGZU
+(1)   22/      E4 :                     	ORG	00E4H
+(1)   23/      E4 : CD 4B 01            TAST	CALL	TASTU		; AUFRUF EINMALIGER ABFRAGE DER TASTATUR
+(1)   24/      E7 : 28 FB               	JR	Z,TAST		; ZERO = KEINE EINGABE
+(1)   25/      E9 : 21 F4 01            	LD	HL,ZUSTAB	; ANFANG DER ZUSTANDSTABELLE
+(1)   26/      EC : CB 47               	BIT 	0,A
+(1)   27/      EE : 28 56               	JR	Z,TASTZ		; ZIFFER EINGEGEBEN
+(1)   28/      F0 : E6 F0               	AND 	0F0H
+(1)   29/      F2 : FE 40               	CP	KODENT		; ENTER?
+(1)   30/      F4 : 20 13               	JR	NZ,TASTA
+(1)   31/      F6 : 16 00               TASTC	LD	D,00H
+(1)   32/      F8 : FD 5E 08            	LD	E,(IY+PROZ)	; PROGRAMMZUSTAND LADEN
+(1)   33/      FB : CB 23               	SLA	E
+(1)   34/      FD : CB 23               	SLA	E		; *4
+(1)   35/      FF : 19                  	ADD	HL,DE		; BERECHNUNG DER ANSPRUNGADRESSE
+(1)   36/     100 : 5E                  	LD	E,(HL)
+(1)   37/     101 : 23                  	INC	HL
+(1)   38/     102 : 56                  	LD	D,(HL)		; ANSPRUNGADRESSE LADEN
+(1)   39/     103 : EB                  	EX	DE,HL
+(1)   40/     104 : 11 E4 00            	LD	DE,TAST		; RUECKKEHARDRESSE VORBEREITEN
+(1)   41/     107 : D5                  	PUSH 	DE
+(1)   42/     108 : E9                  	JP	(HL)		; ANSPRUNG EINER 'AKTION'
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(KONSOLE.ASM) - page 6 - 4/24/2012 15:50:25
+
+
+(1)   43/     109 : FE 50               TASTA	CP	KODVR		; TASTE 'BACK'?
+(1)   44/     10B : 20 19               	JR	NZ,TASTB
+(1)   45/     10D : 3A E4 43            	LD	A,(PROGZU)
+(1)   46/     110 : FE 04               	CP	Z4		; ZUSTAENDE IN DENEN 'BACK' ZULAESSIG
+(1)   47/     112 : 28 0C               	JR	Z,TASTD		; ERKENNEN
+(1)   48/     114 : FE 08               	CP	Z7
+(1)   49/     116 : 28 08               	JR	Z,TASTD
+(1)   50/     118 : FE 03               	CP	Z4A
+(1)   51/     11A : 28 04               	JR	Z,TASTD
+(1)   52/     11C : FE 05               	CP	Z4C
+(1)   53/     11E : 20 C4               	JR	NZ,TAST
+(1)   54/     120 : FD CB 01 DE         TASTD	SET	3,(IY+1)	; 'BACK' KENNZEICHNEN
+(1)   55/     124 : 18 D0               	JR	TASTC
+(1)   56/     126 : 0F                  TASTB	RRCA			; KOMMANDO-EINGABE ERFOLGT
+(1)   57/     127 : 0F                  	RRCA
+(1)   58/     128 : 0F                  	RRCA
+(1)   59/     129 : 3D                  	DEC	A
+(1)   60/     12A : 3D                  	DEC	A
+(1)   61/     12B : 4F                  TASTB1 	LD 	C,A 		; EINTRITT FUER F-KOMMANDOS
+(1)   62/     12C : 06 00               	LD 	B,00H
+(1)   63/     12E : 21 D8 01            	LD 	HL,ANZKNA 	; ANZEIGE DES KOMMANDOS
+(1)   64/     131 : 09                  	ADD 	HL,BC
+(1)   65/     132 : 5E                  	LD 	E,(HL)
+(1)   66/     133 : 23                  	INC 	HL
+(1)   67/     134 : 56                  	LD 	D,(HL)
+(1)   68/     135 : C5                  	PUSH 	BC
+(1)   69/     136 : CD AC 02            	CALL 	KOMDAR 		; NAME KOMMANDO IN ANZEIGE
+(1)   70/     139 : C1                  	POP 	BC
+(1)   71/     13A : CB 39               	SRL 	C
+(1)   72/     13C : 21 CA 01            	LD 	HL,KZUADR 	; ADRESSE FUER ZUSTAND BESTIMMEN
+(1)   73/     13F : 09                  	ADD 	HL,BC
+(1)   74/     140 : 5E                  	LD 	E,(HL)
+(1)   75/     141 : FD 73 08            	LD 	(IY+PROZ),E 	; NEUEN ZUSTAND ABSPEICHERN
+(1)   76/     144 : 18 9E               	JR 	TAST
+(1)   77/     146 : 23                  TASTZ 	INC 	HL 		; ZIFFER EINGEGEBEN
+(1)   78/     147 : 23                  	INC 	HL
+(1)   79/     148 : 79                  	LD 	A,C
+(1)   80/     149 : 18 AB               	JR 	TASTC
+(1)   81/     14B :                     ;*E
+(1)   82/     14B :                     ;*************************************************************************
+(1)   83/     14B :                     ;
+(1)   84/     14B :                     ;
+(1)   85/     14B :                     ;	UNTERPROGRAMM TASTU
+(1)   86/     14B :                     ;
+(1)   87/     14B :                     ;
+(1)   88/     14B :                     ;*************************************************************************
+(1)   89/     14B :                     ;
+(1)   90/     14B :                     ;FUNKTION: FUEHRT EINE EINMALIGE ABFRAGE DER TASTATUR AUS UND FRISCHT
+(1)   91/     14B :                     ;	   DABEI DIE ANZEIGE EINMAL AUF
+(1)   92/     14B :                     ;EINGABEN: ANZBER
+(1)   93/     14B :                     ;AUSGABEN: ZERO - ZEIGT AN, OB TASTE BETAETIGT WURDE
+(1)   94/     14B :                     ; 	   A - KODE DER TASTE
+(1)   95/     14B :                     ; 	    C - EINGEGEBENE ZIFFER IN HEX.DARSTELLUNG
+(1)   96/     14B :                     ;ZERSTOERT: F, B, DE, HL
+(1)   97/     14B : 11 DC 43            TASTU 	LD 	DE,ANZBER 	; ANFANGSWERT FUER EINGEABE
+(1)   98/     14E : 21 D4 43            KONSOL 	LD 	HL,TASTBI 	; TABELLE MIT ABBILD DER TASTATUR
+(1)   99/     151 : AF                  KONTAS 	XOR 	A 		; ANFANGSWERT FUER EINGABE
+(1)  100/     152 : 32 EC 43            	LD 	(HR3),A
+(1)  101/     155 : 06 80               TAST10 	LD 	B,80H 		; AUSGABE FUER DIGITTREIBER
+(1)  102/     157 : 1A                  TAST11 	LD 	A,(DE) 		; AUSGABEWERT
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(KONSOLE.ASM) - page 7 - 4/24/2012 15:50:25
+
+
+(1)  103/     158 : D3 80               TASTX 	OUT 	(PIOD1),A 	; SEGMENTE
+(1)  104/     15A : 78                  	LD 	A,B
+(1)  105/     15B : D3 FC               	OUT 	(PIODIG),A	; DIGITS
+(1)  106/     15D : 13                  	INC 	DE
+(1)  107/     15E : D5                  	PUSH 	DE
+(1)  108/     15F : DB 82               	IN 	A,(PIOD2) 	; TASTATUR ABFRAGEN
+(1)  109/     161 : E6 B0               	AND 	0B0H 		; MASKE FUER EINGABEBITS DER TASTEN
+(1)  110/     163 : 5E                  	LD 	E,(HL) 		; ABBILDWERT HOLEN
+(1)  111/     164 : 0E 04               	LD 	C,4 		; ZAEHLER
+(1)  112/     166 : 17                  TASTX1 	RLA
+(1)  113/     167 : 57                  	LD 	D,A
+(1)  114/     168 : 38 0B               	JR	C,TASTX4 	; TASTE IST GEDRUECKT
+(1)  115/     16A : 7B                  	LD 	A,E
+(1)  116/     16B : 0F                  	RRCA
+(1)  117/     16C : 0F                  	RRCA
+(1)  118/     16D : 5F                  	LD 	E,A
+(1)  119/     16E : E6 03               	AND 	03H
+(1)  120/     170 : 28 1D               	JR	Z,TASTX2
+(1)  121/     172 : 1D                  	DEC 	E 		; ENTPRELLZAEHLER DECREMENTIEREN
+(1)  122/     173 : 18 1A               TASTX3 	JR 	TASTX2
+(1)  123/     175 : 7B                  TASTX4 	LD 	A,E 		; TASTE GEDRUECKT
+(1)  124/     176 : 0F                  	RRCA
+(1)  125/     177 : 0F                  	RRCA
+(1)  126/     178 : 5F                  	LD 	E,A
+(1)  127/     179 : E6 03               	AND 	03H
+(1)  128/     17B : 20 0E               	JR	NZ,TASTX6 	; KEINE NEUE TASTE
+(1)  129/     17D : 79                  	LD 	A,C
+(1)  130/     17E : C5                  	PUSH 	BC
+(1)  131/     17F : C6 10               TASTX7 	ADD 	A,10H 		; KODE ERRECHNEN
+(1)  132/     181 : CB 08               	RRC 	B
+(1)  133/     183 : CB 70               	BIT 	6,B
+(1)  134/     185 : 28 F8               	JR	Z,TASTX7 	; BERECHNUNG TASTENWERT
+(1)  135/     187 : 32 EC 43            	LD 	(HR3),A 	; KODE ABSPEICHERN
+(1)  136/     18A : C1                  	POP 	BC
+(1)  137/     18B : 7B                  TASTX6 	LD 	A,E
+(1)  138/     18C : F6 03               	OR 	03H 		; TASTE IST GEDRUECKT ERKEN
+(1)  139/     18E : 5F                  	LD 	E,A
+(1)  140/     18F : 7A                  TASTX2 	LD 	A,D
+(1)  141/     190 : 0D                  	DEC 	C 		; ZYKLUSZAEHLER
+(1)  142/     191 : 20 D3               	JR	NZ,TASTX1 	; SCHLEIFE SCHLIESSEN
+(1)  143/     193 : 7B                  	LD 	A,E
+(1)  144/     194 : 77                  	LD 	(HL),A 		; TASTABBILD SPEICHERN
+(1)  145/     195 : 23                  	INC 	HL
+(1)  146/     196 : D1                  	POP 	DE
+(1)  147/     197 : 3E 28               	LD 	A,ZEIT
+(1)  148/     199 : =28H                ZEIT 	EQU 	40
+(1)  149/     199 : 3D                  TASTX5 	DEC 	A 		; WARTESCHLEIFE FUER ANZEIGE EINER DIGIT
+(1)  150/     19A : 20 FD               	JR	NZ,TASTX5
+(1)  151/     19C : 3E 00               	LD 	A,00H
+(1)  152/     19E : D3 FC               	OUT 	(PIODIG),A 	; DIGITS ABSCHALTEN
+(1)  153/     1A0 : CB 08               	RRC 	B 		; NAECHSTES DIGIT ANWAEHLEN
+(1)  154/     1A2 : 30 B3               	JR	NC,TAST11
+(1)  155/     1A4 : 3A EC 43            	LD 	A,(HR3)
+(1)  156/     1A7 : F5                  	PUSH 	AF 		; ZYKLUS FERTIG
+(1)  157/     1A8 : CB 4F               	BIT 	1,A 		; ZIFFERNBEREICH FESTSTELLEN
+(1)  158/     1AA : 20 03               	JR	NZ,TAST30
+(1)  159/     1AC : 06 04               	LD 	B,4
+(1)  160/     1AE : FE                  	DB 	0FEH 		; KODE 'CP'
+(1)  161/     1AF : 06 00               TAST30 	LD 	B,00H
+(1)  162/     1B1 : E6 F0               	AND 	0F0H 		; HEX.KODE FUER ZIFFER BERECHNUNG
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(KONSOLE.ASM) - page 8 - 4/24/2012 15:50:25
+
+
+(1)  163/     1B3 : 11 C2 01            	LD 	DE,ZITAB
+(1)  164/     1B6 : 1B                  	DEC 	DE
+(1)  165/     1B7 : 13                  TAST32 	INC 	DE
+(1)  166/     1B8 : D6 10               	SUB 	10H
+(1)  167/     1BA : 20 FB               	JR	NZ,TAST32
+(1)  168/     1BC : 1A                  	LD 	A,(DE) 		; KODE AUS TABELLE LADEN
+(1)  169/     1BD : 80                  	ADD 	A,B
+(1)  170/     1BE : 4F                  	LD 	C,A 		; HEX.KODE IN C UEBERGEBEN
+(1)  171/     1BF : F1                  	POP 	AF
+(1)  172/     1C0 : A7                  TAST33 	AND 	A 		; TEST OB EINGABE ERFOLGTE
+(1)  173/     1C1 : C9                  	RET
+(1)  174/     1C2 :                     ;*E
+(1)  175/     1C2 :                     ;*************************************************************************
+(1)  176/     1C2 :                     ;
+(1)  177/     1C2 :                     ; DEFINITIONEN
+(1)  178/     1C2 :                     ;
+(1)  179/     1C2 :                     ;*************************************************************************
+(1)  180/     1C2 : =40H                KODENT 	EQU 	40H 		; KODE BEI EINGABE VON 'EXEC'
+(1)  181/     1C2 : =50H                KODVR 	EQU 	50H 		; KODE BEI EINGABE VON 'BACK'
+(1)  182/     1C2 : 0A                  ZITAB 	DB 	0AH 		; TABELLE VON HEX.KODES FUER ZIFFERN
+(1)  183/     1C3 : 00                  	DB	00H
+(1)  184/     1C4 : 02                  	DB	2H
+(1)  185/     1C5 : 03                  	DB	3H
+(1)  186/     1C6 : 01                  	DB	1H
+(1)  187/     1C7 : 08                  	DB	8H
+(1)  188/     1C8 : 09                  	DB	9H
+(1)  189/     1C9 : 0B                  	DB	0BH
+(1)  190/     1CA : 06                  KZUADR 	DB	Z5 		; TABELLE FUER ZUSTAENDE BEI KOMMANDOAUFRUF
+(1)  191/     1CB : 09                  	DB	Z8
+(1)  192/     1CC : 00                  	DB	Z1
+(1)  193/     1CD : 00                  	DB	Z1
+(1)  194/     1CE : 00                  	DB	Z1
+(1)  195/     1CF : 01                  	DB	Z2
+(1)  196/     1D0 : 0F                  	DB	Z16
+(1)  197/     1D1 : 0C                  	DB	Z12
+(1)  198/     1D2 : 27                  	DB	Z46
+(1)  199/     1D3 : 2A                  	DB	Z49
+(1)  200/     1D4 : 1B                  	DB	Z34
+(1)  201/     1D5 : 21                  	DB	Z40
+(1)  202/     1D6 : 10                  	DB	Z17
+(1)  203/     1D7 : 16                  	DB	Z22
+(1)  204/     1D8 : E5 E5               ANZKNA	DW	0E5E5H 		; TABELLE FUER NAMEN DER KOMMANDOS
+(1)  205/     1DA : 17 67               	DW	6717H
+(1)  206/     1DC : 00 00               	DW	0000H
+(1)  207/     1DE : 00 00               	DW	0000H
+(1)  208/     1E0 : 00 00               	DW	0000H
+(1)  209/     1E2 : 67 11               	DW	1167H
+(1)  210/     1E4 : C7 71               	DW	71C7H
+(1)  211/     1E6 : 53 76               	DW	7653H
+(1)  212/     1E8 : 84 F1               	DW	0F184H
+(1)  213/     1EA : E7 F1               	DW	0F1E7H
+(1)  214/     1EC : 73 E5               	DW	0E573H
+(1)  215/     1EE : 43 71               	DW	7143H
+(1)  216/     1F0 : 84 E5               	DW	0E584H
+(1)  217/     1F2 : E7 E5               	DW	0E5E7H
+(1)  218/     1F4 :                     ;*INCLUDE LERNSYSTEMEQU.S
+(1)  219/     1F4 :                     ;	END
+(1)  220/     1F4 :                     
+      17/     1F4 :                     	INCLUDE AKTIONEN.ASM
+(1)    1/     1F4 :                     ;*************************************************************************
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 9 - 4/24/2012 15:50:25
+
+
+(1)    2/     1F4 :                     ;
+(1)    3/     1F4 :                     ;	AKTIONSPROGRAMME DES LERNSYSTEMS
+(1)    4/     1F4 :                     ;
+(1)    5/     1F4 :                     ;*************************************************************************
+(1)    6/     1F4 :                     ;
+(1)    7/     1F4 :                     ; FUNKTION: FUEHRT DIE EINGEGEBENEN KOMMANDOS AUS
+(1)    8/     1F4 :                     ;
+(1)    9/     1F4 :                     	ORG 	01F4H
+(1)   10/     1F4 :                     ;	GLOBAL 	ZUSTAB KOMDAR ADRAUS DAAUS
+(1)   11/     1F4 :                     ;	GLOBAL 	ANZDEC ADRANZ DASCH
+(1)   12/     1F4 :                     ;	GLOBAL 	Z10EM4 FUNKAN RDYANZ ZIFANZ
+(1)   13/     1F4 :                     ;	GLOBAL 	LDMA BS DS BL DL
+(1)   14/     1F4 :                     ;	EXTERNAL TASTB1 TASTU
+(1)   15/     1F4 :                     ;	EXTERNAL ANZB2 ANZB6
+(1)   16/     1F4 :                     ;	EXTERNAL ANZBER HR1 HR2 HR3 ANZB4
+(1)   17/     1F4 :                     ;	EXTERNAL RAMANF RAMEND BREAKP
+(1)   18/     1F4 :                     ;	EXTERNAL SYSP26 SYSP1 FSTACK
+(1)   19/     1F4 :                     ;	EXTERNAL HR4
+(1)   20/     1F4 :                     ;*************************************************************************
+(1)   21/     1F4 :                     ;
+(1)   22/     1F4 :                     ;	ZUSTANDSTABELLE
+(1)   23/     1F4 :                     ;
+(1)   24/     1F4 :                     ;*************************************************************************
+(1)   25/     1F4 :                     ;
+(1)   26/     1F4 :                     ;	FUNKTION: ENTHAELT ANSPRUNGADRESSEN FUER AUSZUFUEHRENDE
+(1)   27/     1F4 :                     ;	AKTIONEN IN ABHAENGIGKEIT VOM ZUSTAND DES
+(1)   28/     1F4 :                     ;	MONITORS UND DER EINGABE.
+(1)   29/     1F4 :                     ;	DIE ERSTE ANSPRUNGADRESSE EINES ZUSTANDES WIRD
+(1)   30/     1F4 :                     ;	BEI EINGABE VON 'EXEC' ANGESPRUNGEN, DIE ZWEITE
+(1)   31/     1F4 :                     ;	BEI BETAETIGUNG DER HEXADEZIMALTASTATUR.
+(1)   32/     1F4 :                     ;*************************************************************************
+(1)   33/     1F4 : A4 03               ZUSTAB 	DW 	RETURN 		; Z1: 	KEIN KOMMANDO ANGEWAEHLT
+(1)   34/     1F6 : A4 03               	DW 	RETURN
+(1)   35/     1F8 :                     ;*************************************************************************
+(1)   36/     1F8 : D3 03               	DW 	Z2E 		; Z2: 	KOMMANDO 'REGISTER' GEWAEHLT
+(1)   37/     1FA : A5 03               	DW 	Z2Z
+(1)   38/     1FC : DA 03               	DW 	Z3E 		; Z3: 	REGISTERNAME EINGEGEBEN
+(1)   39/     1FE : A9 03               	DW 	Z3Z
+(1)   40/     200 : 10 10               	DW 	Z4AE 		; Z4A: 	MODIFIKATION DES HOEHERWERTIGEN
+(1)   41/     202 : C0 03               	DW 	Z4AZ 		; 	REGISTERS
+(1)   42/     204 : 43 10               	DW 	Z4E 		; Z4: 	MODIFIKATION DES NIEDERWERTIGEN
+(1)   43/     206 : B5 03               	DW 	Z4Z 		;	REGISTERS
+(1)   44/     208 : 58 10               	DW 	Z4CE 		; Z4C: 	MODIFIKATION EINES WORTREGISTERS
+(1)   45/     20A : CC 03               	DW 	Z4CZ
+(1)   46/     20C :                     ;*************************************************************************
+(1)   47/     20C : 80 10               	DW 	Z5E 		; Z5: 	KOMMANDO SPEICHERMODIFIKATION
+(1)   48/     20E : 9B 10               	DW 	Z5Z
+(1)   49/     210 : AB 10               	DW 	Z6E 		; Z6: 	SPEICHERADRESSE EINGEGEBEN
+(1)   50/     212 : A4 10               	DW 	Z6Z
+(1)   51/     214 : B0 10               	DW 	Z7E 		; Z7: 	DATEN IM SPEICHER MODIFIZIERBAR
+(1)   52/     216 : B5 03               	DW 	Z4Z
+(1)   53/     218 :                     ;*************************************************************************
+(1)   54/     218 : C7 10               	DW 	Z8E 		; Z8: 	KOMMANDO PROGRAMMSTART GEWAEHLT
+(1)   55/     21A : 9B 10               	DW 	Z5Z
+(1)   56/     21C : DF 10               	DW 	Z9E 		; Z9: 	EINGABE EINER NEUEN STARTADRESSE
+(1)   57/     21E : A4 10               	DW 	Z6Z
+(1)   58/     220 : E7 10               	DW 	Z10E 		; Z10: 	EINGABE EINES PRUEFPUNKTES
+(1)   59/     222 : A4 10               	DW 	Z6Z
+(1)   60/     224 :                     ;*************************************************************************
+(1)   61/     224 : 39 11               	DW 	Z12E 		; Z12: 	KOMMANDO SCHRITTBETRIEB GEWAEHLT
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 10 - 4/24/2012 15:50:25
+
+
+(1)   62/     226 : 9B 10               	DW 	Z5Z
+(1)   63/     228 : 33 11               	DW 	Z13E 		; Z13: 	ADRESSE FUER SCHRITT EINGEBEN
+(1)   64/     22A : A4 10               	DW 	Z6Z	
+(1)   65/     22C : 3D 11               	DW 	Z14E 		; Z14: 	SCHRITT(E) WURDE(N) AUSGEFUEHRT
+(1)   66/     22E : A4 03               	DW 	RETURN
+(1)   67/     230 :                     ;*************************************************************************
+(1)   68/     230 : A4 03               	DW 	RETURN 		; Z16:	KOMMANDO FUNKTION WURDE ANGEWAEHLT
+(1)   69/     232 : 57 11               	DW 	Z16Z
+(1)   70/     234 :                     ;*************************************************************************
+(1)   71/     234 : A4 03               	DW 	RETURN 		; Z17:	MAGNETBANDEINGABE WURDE ANGEWAEHLT
+(1)   72/     236 : 9B 10               	DW 	Z5Z
+(1)   73/     238 : 7E 11               	DW 	Z18E 		; Z18: 	EINGABE DER ANFANGSADRESSE
+(1)   74/     23A : A4 10               	DW 	Z6Z
+(1)   75/     23C : A4 03               	DW 	RETURN 		; Z19:	ANFANGSADRESSE UEBERNOMMEN
+(1)   76/     23E : 9B 10               	DW 	Z5Z
+(1)   77/     240 : 8E 11               	DW 	Z20E 		; Z20:	EINGABE DER ENDADRESSE
+(1)   78/     242 : A4 10               	DW 	Z6Z
+(1)   79/     244 : 95 11               	DW 	Z21AE 		; Z21A: ABFRAGE 'READY?'
+(1)   80/     246 : A4 03               	DW 	RETURN
+(1)   81/     248 : B0 11               	DW 	Z21E 		; Z21:	AUSFUEHRUNG UND FEHLERANZEIGE
+(1)   82/     24A : A4 03               	DW 	RETURN
+(1)   83/     24C :                     ;*************************************************************************
+(1)   84/     24C : A4 03               	DW	RETURN 		; Z22:	MAGNETBRNDAUSGABE GEWAEHLT
+(1)   85/     24E : 9B 10               	DW	Z5Z
+(1)   86/     250 : 7E 11               	DW	Z18E 		; Z23:	EINGABE DER ANFANGSADRESSE
+(1)   87/     252 : A4 10               	DW	Z6Z
+(1)   88/     254 : A4 03               	DW	RETURN 		; Z24: 	ANFANGSADRESSE UEBERNOMMEN
+(1)   89/     256 : 9B 10               	DW	Z5Z
+(1)   90/     258 : 8E 11               	DW	Z20E 		; Z25: 	EINGABE DER ENDADRESSE
+(1)   91/     25A : A4 10               	DW	Z6Z
+(1)   92/     25C : CB 11               	DW	Z25AE 		; Z25A:	ABFRAGE 'READY?' UND AUSFUEHRUNG
+(1)   93/     25E : A4 03               	DW	RETURN
+(1)   94/     260 :                     ;*************************************************************************
+(1)   95/     260 : A4 03               	DW	RETURN 		; Z34:	KOMMANDO DATENTRANSPORT GEWAEHLT
+(1)   96/     262 : 9B 10               	DW	Z5Z
+(1)   97/     264 : 4E 13               	DW	Z35E 		; Z35: 	EINGABE DER ZIELADRESSE
+(1)   98/     266 : A4 10               	DW	Z6Z
+(1)   99/     268 : A4 03               	DW	RETURN 		; Z36: 	ZIELADRESSE WURDE UEBERNOMMEN
+(1)  100/     26A : 9B 10               	DW	Z5Z
+(1)  101/     26C : 54 13               	DW	Z37E 		; Z37: 	EINGABE DER QUELLADRESSE
+(1)  102/     26E : A4 10               	DW	Z6Z
+(1)  103/     270 : A4 03               	DW	RETURN 		; Z38: 	QUELLRDRESSE WURDE UEBERNOMMEN
+(1)  104/     272 : 9B 10               	DW	Z5Z
+(1)  105/     274 : 60 13               	DW	Z39E 		; Z39: 	EINGABE DER LAENGE UND AUSFHRG.
+(1)  106/     276 : A4 10               	DW	Z6Z
+(1)  107/     278 :                     ;*************************************************************************
+(1)  108/     278 : A4 03               	DW	RETURN 		; Z40: 	KOMMANDO FUELLEN GEWAEHLT
+(1)  109/     27A : 9B 10               	DW	Z5Z
+(1)  110/     27C : 89 13               	DW	Z41E 		; Z41: 	EINGABE DER ANFANGSADRESSE
+(1)  111/     27E : A4 10               	DW	Z6Z
+(1)  112/     280 : A4 03               	DW	RETURN 		; Z42: 	ANFANGSADRESSE WURDE UEBERNOMMEN
+(1)  113/     282 : 9B 10               	DW	Z5Z
+(1)  114/     284 : 8F 13               	DW	Z43E 		; Z43: 	EINGABE DER ENDADRESSE
+(1)  115/     286 : A4 10               	DW	Z6Z
+(1)  116/     288 : A4 03               	DW	RETURN 		; Z44: 	ENDADRESSE WURDE UEBERNOMMEN
+(1)  117/     28A : 94 13               	DW	Z44Z
+(1)  118/     28C : A0 13               	DW	Z45E 		; Z45: 	EINGABE DES DATENMUSTERS UND
+(1)  119/     28E : B5 03               	DW	Z4Z 		;	AUSFUEHRUNG
+(1)  120/     290 :                     ;*************************************************************************
+(1)  121/     290 : A4 03               	DW	RETURN 		; Z46: 	KOMMANDO PORTEINGABE ANGEWAEHLT
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 11 - 4/24/2012 15:50:25
+
+
+(1)  122/     292 : 9B 10               	DW	Z5Z
+(1)  123/     294 : C1 13               	DW	Z47E 		; Z47: 	EINGABE DER PORTADRESSE
+(1)  124/     296 : B6 13               	DW	Z47Z
+(1)  125/     298 : C4 13               	DW	Z48E 		; Z48: 	DARSTELLUNG GELESENER DATEN
+(1)  126/     29A : B6 13               	DW	Z47Z
+(1)  127/     29C :                     ;*************************************************************************
+(1)  128/     29C : A4 03               	DW	RETURN 		; Z49: 	KOMMANDO PBRTEINGABE GEWAEHLT
+(1)  129/     29E : 9B 10               	DW	Z5Z
+(1)  130/     2A0 : D1 13               	DW	Z50E 		; Z50: 	EINGABE DER PORTADRESSE
+(1)  131/     2A2 : B6 13               	DW	Z47Z
+(1)  132/     2A4 : A4 03               	DW	RETURN 		; Z51: 	PORTADRESSE WURDE UEBERNOMMEN
+(1)  133/     2A6 : 94 13               	DW	Z44Z
+(1)  134/     2A8 : E3 13               	DW	Z52E 		; Z52: 	EINGABE DER. AUSGABEDATEN UND
+(1)  135/     2AA : B5 03               	DW	Z4Z 		;	AUSFUEHRUNG
+(1)  136/     2AC :                     ;*E
+(1)  137/     2AC :                     ;*************************************************************************
+(1)  138/     2AC :                     ;
+(1)  139/     2AC :                     ; MACRO-DEFINITIONEN
+(1)  140/     2AC :                     ;
+(1)  141/     2AC :                     ;*************************************************************************
+(1)  142/     2AC :                     SBWC 	MACRO 			; REGISTERPAARSUBTRAKTION OHNE CARRY
+(1)  143/     2AC :                     	AND 	A
+(1)  144/     2AC :                     	SBC 	HL,DE
+(1)  145/     2AC :                     	ENDM
+(1)  146/     2AC :                     WAIT 	MACRO PWAIT 		; ZEITSCHLEIFE
+(1)  147/     2AC :                     	LD 	B,PWAIT
+(1)  148/     2AC :                     	DJNZ	$
+(1)  149/     2AC :                     	ENDM
+(1)  150/     2AC :                     SWAIT 	MACRO PSW
+(1)  151/     2AC :                     	LD 	A,PSW
+(1)  152/     2AC :                     SWSYM 	DEC 	A
+(1)  153/     2AC :                     	JR	NZ,SWSYM
+(1)  154/     2AC :                     	ENDM
+(1)  155/     2AC :                     ;*M OFF				; KEINE MACROEXPANSION IN DER LISTE
+(1)  156/     2AC :                     ;*E
+(1)  157/     2AC :                     ;*************************************************************************
+(1)  158/     2AC :                     ;
+(1)  159/     2AC :                     ; UNTERPROGRAMME
+(1)  160/     2AC :                     ;
+(1)  161/     2AC :                     ;*************************************************************************
+(1)  162/     2AC :                     ;
+(1)  163/     2AC :                     ; KOMMANDODARSTELLUNG
+(1)  164/     2AC :                     ;
+(1)  165/     2AC :                     ; FUNKTION: TRANSPORTIERT INHALT VON DE IN DEN ANZEIGEBEREICH (LINKS-
+(1)  166/     2AC :                     ; 	    BUENDIG). WIRD ZUR ANZEIGE DER KOMMANDOART VERWENDET.
+(1)  167/     2AC :                     ;	    DER UEBRIGE ANZEIGEBEREICH WIRD GELOESCHT (AUF 00H GESETZT).
+(1)  168/     2AC :                     ; ZERSTOERT: F,B,HL
+(1)  169/     2AC : 21 DC 43            KOMDAR 	LD 	HL,ANZBER 	; KOM. IN ANZ
+(1)  170/     2AF : 72                  FUNKAN 	LD 	(HL),D 		; FUNKTIONSANZEIGE
+(1)  171/     2B0 : 23                  	INC 	HL
+(1)  172/     2B1 : 73                  	LD 	(HL),E
+(1)  173/     2B2 : 06 06               	LD 	B,6
+(1)  174/     2B4 : 23                  KOMDA1	INC 	HL
+(1)  175/     2B5 : 36 00               	LD 	(HL),00H 	; REST DER ANZEIGE LOESCHEN
+(1)  176/     2B7 : 10 FB               	DJNZ 	KOMDA1
+(1)  177/     2B9 : C9                  	RET
+(1)  178/     2BA :                     ;*************************************************************************
+(1)  179/     2BA :                     ;
+(1)  180/     2BA :                     ; MAGNETBAND BEREIT
+(1)  181/     2BA :                     ;
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 12 - 4/24/2012 15:50:25
+
+
+(1)  182/     2BA :                     ; FUNKTION: TRANSPORTIERT TEXT ' READY ?' IN ANZEIGEBEREICH
+(1)  183/     2BA :                     ; ZERSTOERT: F, BC, DE, HL
+(1)  184/     2BA :                     ;
+(1)  185/     2BA : 11 DC 43            MBREADY LD 	DE,ANZBER
+(1)  186/     2BD : 21 C6 02            RDYANZ 	LD 	HL,MBRTEX 	; ANZEIGE 'READY?'
+(1)  187/     2C0 : 01 08 00            TRANS 	LD 	BC,8
+(1)  188/     2C3 : ED B0               	LDIR
+(1)  189/     2C5 : C9                  	RET
+(1)  190/     2C6 :                     MBRTEX
+(1)  191/     2C6 : 00                  	DB 	00H
+(1)  192/     2C7 : 11                  	DB 	11H
+(1)  193/     2C8 : 73                  	DB 	73H
+(1)  194/     2C9 : F5                  	DB 	0F5H
+(1)  195/     2CA : 97                  	DB 	97H
+(1)  196/     2CB : D6                  	DB 	0D6H
+(1)  197/     2CC : 00                  	DB 	00H
+(1)  198/     2CD : B9                  	DB 	0B9H
+(1)  199/     2CE :                     ;*************************************************************************
+(1)  200/     2CE :                     ; DATENSCHIEBEN
+(1)  201/     2CE :                     ;
+(1)  202/     2CE :                     ; FUNKTION: VERSCHIEBT D3 BIS D0 IM ACCU IN DAS HILFSREGISTER HR1
+(1)  203/     2CE :                     ; ZERSTOERT: HL
+(1)  204/     2CE :                     ;
+(1)  205/     2CE : 21 E8 43            DASCH 	LD 	HL,HR1
+(1)  206/     2D1 : F5                  LDMA 	PUSH 	AF 		; LADE MEMORY MIT A
+(1)  207/     2D2 : ED 6F               	RLD
+(1)  208/     2D4 : 23                  	INC 	HL
+(1)  209/     2D5 : ED 6F               	RLD
+(1)  210/     2D7 : F1                  	POP 	AF
+(1)  211/     2D8 : C9                  	RET
+(1)  212/     2D9 :                     ;*************************************************************************
+(1)  213/     2D9 :                     ;
+(1)  214/     2D9 :                     ; ANZEIGE EINER ADRESSE
+(1)  215/     2D9 :                     ;
+(1)  216/     2D9 :                     ; FUNKTION: SCHIEBT DEN INHALT VON A IN DEN ADRESSBEREICH DER ANZEIGE
+(1)  217/     2D9 :                     ; IN GEEIGNETEM KODE
+(1)  218/     2D9 :                     ; ZERSTOERT: AF,DE
+(1)  219/     2D9 :                     :
+(1)  220/     2D9 : E5                  ADRANZ 	PUSH 	HL
+(1)  221/     2DA : 21 DE 43            	LD 	HL,ANZB2
+(1)  222/     2DD : C5                  ADRAN1 	PUSH 	BC
+(1)  223/     2DE : 06 03               	LD 	B,3
+(1)  224/     2E0 : 18 07               	JR 	DAANZ1
+(1)  225/     2E2 :                     ;*************************************************************************
+(1)  226/     2E2 :                     ;
+(1)  227/     2E2 :                     ; ANZEIGE VON DATEN
+(1)  228/     2E2 :                     ;
+(1)  229/     2E2 :                     ; FUNKTION: SCHIEBT DEN INHALT VON A IN DEN DATENBEREICH DER ANZEIGE
+(1)  230/     2E2 :                     ; IN GEEIGNETEM KODE
+(1)  231/     2E2 :                     ; ZERSTOERT: AF,DE
+(1)  232/     2E2 :                     ;
+(1)  233/     2E2 : E5                  DAANZ 	PUSH 	HL
+(1)  234/     2E3 : 21 E2 43            	LD 	HL,ANZB6
+(1)  235/     2E6 : C5                  DAANZ3 	PUSH 	BC
+(1)  236/     2E7 : 06 01               	LD 	B,1
+(1)  237/     2E9 : 5D                  DAANZ1 	LD 	E,L
+(1)  238/     2EA : 54                  	LD 	D,H
+(1)  239/     2EB : 23                  	INC 	HL
+(1)  240/     2EC : E6 0F               	AND 	0FH
+(1)  241/     2EE : 4F                  	LD 	C,A
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 13 - 4/24/2012 15:50:25
+
+
+(1)  242/     2EF : 7E                  DAANZ2 	LD 	A,(HL)
+(1)  243/     2F0 : CB 9F               	RES 	BIA,A 		; PUNKT LOESCHEN
+(1)  244/     2F2 : 12                  	LD 	(DE),A
+(1)  245/     2F3 : 13                  	INC 	DE
+(1)  246/     2F4 : 23                  	INC 	HL
+(1)  247/     2F5 : 10 F8               	DJNZ 	DAANZ2
+(1)  248/     2F7 : 21 10 03            	LD 	HL,ANZDEC
+(1)  249/     2FA : 09                  	ADD 	HL,BC
+(1)  250/     2FB : 7E                  	LD 	A,(HL)
+(1)  251/     2FC : 12                  	LD	(DE),A
+(1)  252/     2FD : C1                  	POP 	BC
+(1)  253/     2FE : E1                  	POP 	HL
+(1)  254/     2FF : C9                  	RET
+(1)  255/     300 :                     ;*************************************************************************
+(1)  256/     300 :                     ;
+(1)  257/     300 :                     ; ANZEIGE EINER ZIFFER DURCH EINSCHIEBEN
+(1)  258/     300 :                     ; ZERSTOERT AF,DE
+(1)  259/     300 :                     ;
+(1)  260/     300 : E5                  ZIFANZ 	PUSH 	HL
+(1)  261/     301 : C5                  	PUSH 	BC
+(1)  262/     302 : 18 E5               	JR 	DAANZ1
+(1)  263/     304 :                     ;*************************************************************************
+(1)  264/     304 :                     ;
+(1)  265/     304 :                     ; ANZEIGE VON DATEN IM ANZEIGEBEREICH 4,5
+(1)  266/     304 :                     ;
+(1)  267/     304 :                     ; FUNKTION: SCHIEBT DATEN AUS A IN DEN ANZEIGEBEREICH
+(1)  268/     304 :                     ; ZERSTOERT: AF, DE
+(1)  269/     304 :                     ;
+(1)  270/     304 : E5                  HDAANZ 	PUSH 	HL
+(1)  271/     305 : 21 E0 43            	LD 	HL,ANZB4
+(1)  272/     308 : 18 DC               	JR 	DAANZ3
+(1)  273/     30A :                     ;*************************************************************************
+(1)  274/     30A :                     ;
+(1)  275/     30A :                     ; ANZEIGE VON WORTEN IM DATENBEREICH
+(1)  276/     30A :                     ;
+(1)  277/     30A :                     ; FUNKTION: SCHIEBT DEN INHALT VON A IN DIE STELLEN 5 BIS 7 DES ANZEIGE-
+(1)  278/     30A :                     ; 	    BEREICHES
+(1)  279/     30A :                     ; ZERSTOERT: AF,DE
+(1)  280/     30A :                     ;
+(1)  281/     30A : E5                  LDAANZ 	PUSH 	HL
+(1)  282/     30B : 21 E0 43            	LD 	HL,ANZB4
+(1)  283/     30E : 18 CD               	JR 	ADRAN1
+(1)  284/     310 :                     ;*************************************************************************
+(1)  285/     310 :                     ;
+(1)  286/     310 :                     ; ANZEIGEKODETABELLE
+(1)  287/     310 :                     ;
+(1)  288/     310 :                     ; FUNKTION: ENTHAELT IN AUFSTEIGENDER REIHENFOLGE DIE SIEBENSEGMENTKODES
+(1)  289/     310 :                     ; 	    FUR DIE HEXADEZIMALZIFFFRN 0 BIS F
+(1)  290/     310 :                     ;
+(1)  291/     310 : EF                  ANZDEC 	DB	0EFH
+(1)  292/     311 : 8C                  	DB	8CH
+(1)  293/     312 : BB                  	DB	0BBH
+(1)  294/     313 : BE                  	DB	0BEH
+(1)  295/     314 : DC                  	DB	0DCH
+(1)  296/     315 : 7E                  	DB	7EH
+(1)  297/     316 : 7F                  	DB	7FH
+(1)  298/     317 : AC                  	DB	0ACH
+(1)  299/     318 : FF                  	DB	0FFH
+(1)  300/     319 : FE                  	DB	0FEH
+(1)  301/     31A : FD                  	DB	0FDH
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 14 - 4/24/2012 15:50:25
+
+
+(1)  302/     31B : 5F                  	DB	5FH
+(1)  303/     31C : 6B                  	DB	6BH
+(1)  304/     31D : 9F                  	DB	9FH
+(1)  305/     31E : 7B                  	DB	7BH
+(1)  306/     31F : 79                  	DB	79H
+(1)  307/     320 :                     ;*************************************************************************
+(1)  308/     320 :                     ;
+(1)  309/     320 :                     ; VERSCHIEBEN DES INHALTS VON HL HACH A
+(1)  310/     320 :                     ;
+(1)  311/     320 :                     ; FUNCTION: VERSCHIEBT DIE BITS D15 - D12 VON HL NACH A
+(1)  312/     320 :                     ; ZERSTOERT: A,HL
+(1)  313/     320 :                     ;
+(1)  314/     320 : C5                  SHIHLA	PUSH 	BC
+(1)  315/     321 : AF                  	XOR 	A
+(1)  316/     322 : 06 04               	LD 	B,4
+(1)  317/     324 : CB 15               SHIHL1 	RL 	L
+(1)  318/     326 : CB 14               	RL 	H
+(1)  319/     328 : 17                  	RLA
+(1)  320/     329 : 10 F9               	DJNZ 	SHIHL1
+(1)  321/     32B : C1                  	POP 	BC
+(1)  322/     32C : C9                  	RET
+(1)  323/     32D :                     ;*************************************************************************
+(1)  324/     32D :                     ;
+(1)  325/     32D :                     ; AUSGAGE EINES WORTES AUF DIE ANZEIGE
+(1)  326/     32D :                     ;
+(1)  327/     32D :                     ; FUNCTION: BRINGT DEN INHALT VON HL IN SIEBENSEGMENTKODE IN DEN ADRESS-
+(1)  328/     32D :                     ; 	    BEREICH DES ANZEIGEBEBEREICHES
+(1)  329/     32D :                     ; ZERSTOERT: AF,BC,DE,HL
+(1)  330/     32D :                     ;
+(1)  331/     32D : 06 04               ADRAUS 	LD 	B,4
+(1)  332/     32F : CD 20 03            ADRAU1 	CALL 	SHIHLA
+(1)  333/     332 : CD D9 02            	CALL 	ADRANZ
+(1)  334/     335 : 10 F8               	DJNZ 	ADRAU1
+(1)  335/     337 : C9                  	RET
+(1)  336/     338 :                     ;*************************************************************************
+(1)  337/     338 :                     ;
+(1)  338/     338 :                     ; AUSGABE EINES BYTES
+(1)  339/     338 :                     ;
+(1)  340/     338 :                     ; FUNKTION: BRINGT DEN INHALT VON H IN SIEBENSEGMENTKODE IN DEN DATEN-
+(1)  341/     338 :                     ;	    BEREICH DES ANZEIGEBEREICHES
+(1)  342/     338 :                     ; ZERSTOERT: AF, BC,DE,HL
+(1)  343/     338 :                     ;
+(1)  344/     338 : 06 02               DAAUS 	LD 	B,2
+(1)  345/     33A : CD 20 03            DAAUS1 	CALL 	SHIHLA
+(1)  346/     33D : CD E2 02            	CALL 	DAANZ
+(1)  347/     340 : 10 F8               	DJNZ 	DAAUS1
+(1)  348/     342 : C9                  	RET
+(1)  349/     343 :                     ;*************************************************************************
+(1)  350/     343 :                     ;
+(1)  351/     343 :                     ; AUSGABE EINES WORTES
+(1)  352/     343 :                     ;
+(1)  353/     343 :                     ; FUNKTION: BRINGT DEN INHALT VON HL IN SIEBENSEGMENTKODE IN DEN BEREICH
+(1)  354/     343 :                     ; 5 BIS 7 DES ANZEIGEBEREICHES
+(1)  355/     343 :                     ; ZERSTOERT: AF,BC,DE,HL
+(1)  356/     343 :                     ;
+(1)  357/     343 : 06 04               LDAAUS 	LD 	B,4
+(1)  358/     345 : CD 20 03            LDAAU1 	CALL 	SHIHLA
+(1)  359/     348 : CD 0A 03            	CALL 	LDAANZ
+(1)  360/     34B : 10 F8               	DJNZ 	LDAAU1
+(1)  361/     34D : C9                  	RET
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 15 - 4/24/2012 15:50:25
+
+
+(1)  362/     34E :                     ;*************************************************************************
+(1)  363/     34E :                     ;
+(1)  364/     34E :                     ; TRANSPORT EINES REGISTERPAARES AUS DEM STACK
+(1)  365/     34E :                     ;
+(1)  366/     34E :                     ; FUNKTION: LIEST REGISTERPAAR AUS DEM STACK UND TRANSPORTIERT ES NACH HR1
+(1)  367/     34E :                     ;	    UND IN SIEBENSEGMENTKODE IN DEN ANZEIGEBEREICH 4 BIS 7
+(1)  368/     34E :                     ;	    DER ZEIGER DES REGISTERPARRES STEHT IN HR2
+(1)  369/     34E :                     ; ZERSTOERT: AF,BC,DE,HL
+(1)  370/     34E :                     ;
+(1)  371/     34E : CD 67 03            RINANZ 	CALL 	GREPOI 		; REGISTERPOINTER BILDEN
+(1)  372/     351 : 56                  	LD 	D,(HL)
+(1)  373/     352 : 2B                  	DEC 	HL
+(1)  374/     353 : 5E                  	LD 	E,(HL)
+(1)  375/     354 : EB                  	EX 	DE,HL
+(1)  376/     355 : 22 E8 43            	LD 	(HR1),HL
+(1)  377/     358 : CD 43 03            	CALL 	LDAAUS
+(1)  378/     35B : C9                  	RET
+(1)  379/     35C :                     ;*************************************************************************
+(1)  380/     35C :                     ;
+(1)  381/     35C :                     ; TRANSPORT EINES REGISTERPAARES IN DEN STACK
+(1)  382/     35C :                     ;
+(1)  383/     35C :                     ; FUNKTION: TRANSPORTIERT EIN RGISTERPRAR AUS HR1 IN DEN STACK.
+(1)  384/     35C :                     ; 	    DER ZEIGER ('NAME') DES REGISTERPAARES BEFINDET SICH IN HR2.
+(1)  385/     35C :                     ; ZERSTOERT: F,DE,HL
+(1)  386/     35C :                     ;
+(1)  387/     35C : CD 67 03            RISTA 	CALL 	GREPOI 		; REGISTERPOINTER BILDEN
+(1)  388/     35F : ED 5B E8 43         	LD 	DE,(HR1)
+(1)  389/     363 : 72                  	LD 	(HL),D
+(1)  390/     364 : 2B                  	DEC 	HL
+(1)  391/     365 : 73                  	LD 	(HL),E
+(1)  392/     366 : C9                  	RET
+(1)  393/     367 : FD 5E 0E            GREPOI 	LD 	E,(IY+H2)
+(1)  394/     36A : CB 23               	SLA 	E
+(1)  395/     36C : 16 00               	LD 	D,00H
+(1)  396/     36E : 21 D3 43            	LD 	HL,SYSP1
+(1)  397/     371 : (MACRO)             	SBWC
+(1)  397/     371 : A7                          AND     A
+(1)  397/     372 : ED 52                       SBC     HL,DE
+(1)  398/     374 : C9                  	RET
+(1)  399/     375 :                     ;*************************************************************************
+(1)  400/     375 :                     ;
+(1)  401/     375 :                     ; AUSGABE EINES REGISTERNAMENS
+(1)  402/     375 :                     ;
+(1)  403/     375 :                     ; FUNKTION: SCHREIBT DEN NAMFN EINES REGISTERPAARES IN GEEIGNETEM KODE
+(1)  404/     375 :                     ; 	    IN DEN ANZEIGEBEREICH 2,3
+(1)  405/     375 :                     ; 	    ZEIGER STEHT IN HR2
+(1)  406/     375 :                     ; ZERSTOERT: F,BC,DE,HL
+(1)  407/     375 :                     ;
+(1)  408/     375 : 21 8A 03            RNANZ 	LD 	HL,ANZRNA 	; REG.NAME AUSGEBEN
+(1)  409/     378 : 16 00               	LD 	D,00H
+(1)  410/     37A : FD 5E 0E            	LD 	E,(IY+H2)
+(1)  411/     37D : CB 23               	SLA 	E
+(1)  412/     37F : 19                  	ADD 	HL,DE
+(1)  413/     380 : 4E                  	LD 	C,(HL)
+(1)  414/     381 : 23                  	INC 	HL
+(1)  415/     382 : 46                  	LD 	B,(HL)
+(1)  416/     383 : FD 70 02            	LD 	(IY+2),B
+(1)  417/     386 : FD 71 03            	LD 	(IY+3),C
+(1)  418/     389 : C9                  	RET
+(1)  419/     38A :                     ;*************************************************************************
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 16 - 4/24/2012 15:50:25
+
+
+(1)  420/     38A :                     ;
+(1)  421/     38A :                     ; TABELLE DER REGISTERNAMEN
+(1)  422/     38A :                     ;
+(1)  423/     38A :                     ; FUNKTION: EHHAELT IN AUFSTEIGENDER REIHENFOLGE DIE SIEBENSEGMENT- 
+(1)  424/     38A :                     ; 	    REPRAESENTATIONEN DER REGISTERNAMEN: AF, BC, DE, HL, AF'
+(1)  425/     38A :                     ; 	    BC', DE', HL', IX, IY, I.EI, SP, PC
+(1)  426/     38A :                     ;
+(1)  427/     38A : 71 F5               ANZRNA 	DW 	0F571H
+(1)  428/     38C : 63 57               	DW	5763H
+(1)  429/     38E : 73 97               	DW	9773H
+(1)  430/     390 : 43 D5               	DW	0D543H
+(1)  431/     392 : 79 FD               	DW	0FD79H
+(1)  432/     394 : 6B 5F               	DW	5F6BH
+(1)  433/     396 : 7B 9F               	DW	9F7BH
+(1)  434/     398 : 4B DD               	DW	0DD4BH
+(1)  435/     39A : 73 84               	DW	8473H
+(1)  436/     39C : D5 84               	DW	84D5H
+(1)  437/     39E : D6 84               	DW	84D6H
+(1)  438/     3A0 : F1 76               	DW	76F1H
+(1)  439/     3A2 : 63 F1               	DW	0F163H
+(1)  440/     3A4 :                     ;*E
+(1)  441/     3A4 :                     ;*************************************************************************
+(1)  442/     3A4 :                     ;
+(1)  443/     3A4 :                     ; AKTIONSPROGRAMME
+(1)  444/     3A4 :                     ;
+(1)  445/     3A4 :                     ;*************************************************************************
+(1)  446/     3A4 :                     ;
+(1)  447/     3A4 :                     ;
+(1)  448/     3A4 :                     ;
+(1)  449/     3A4 :                     ;
+(1)  450/     3A4 :                     ;*************************************************************************
+(1)  451/     3A4 :                     ;
+(1)  452/     3A4 :                     ; LEERE AKTION - FUEHRT NICHTS AUS
+(1)  453/     3A4 :                     ;
+(1)  454/     3A4 : C9                  RETURN	RET
+(1)  455/     3A5 :                     ;*************************************************************************
+(1)  456/     3A5 :                     ;
+(1)  457/     3A5 :                     ; EINGABE EINES REGISTERPAARNAMENS DURCH DIE HAXDEZIMALTASTATUR
+(1)  458/     3A5 :                     ;
+(1)  459/     3A5 : FD 36 08 02         Z2Z 	LD	(IY+PROZ),Z3
+(1)  460/     3A9 :                     ;*************************************************************************
+(1)  461/     3A9 :                     ;
+(1)  462/     3A9 :                     ; KORREKTUR DES REGISTERPARRNAMENS DURCH ERNEUTE EINGABE
+(1)  463/     3A9 :                     ;
+(1)  464/     3A9 : FE 0D               Z3Z	CP	13
+(1)  465/     3AB : 38 01               	JR	C,Z3ZM1
+(1)  466/     3AD : AF                  	XOR 	A
+(1)  467/     3AE : FD 77 0E            Z3ZM1 	LD 	(IY+H2),A
+(1)  468/     3B1 : CD 75 03            	CALL 	RNANZ
+(1)  469/     3B4 : C9                  	RET
+(1)  470/     3B5 :                     ;*************************************************************************
+(1)  471/     3B5 :                     ;
+(1)  472/     3B5 :                     ; EINGABE NEUER DATEN FUER DAS NIEDERWERTIGE REGISTER
+(1)  473/     3B5 :                     ;
+(1)  474/     3B5 : F5                  Z4Z 	PUSH	AF
+(1)  475/     3B6 : 21 E8 43            	LD 	HL,HR1
+(1)  476/     3B9 : ED 6F               	RLD
+(1)  477/     3BB : F1                  	POP 	AF
+(1)  478/     3BC : CD E2 02            	CALL 	DAANZ
+(1)  479/     3BF : C9                  	RET
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 17 - 4/24/2012 15:50:25
+
+
+(1)  480/     3C0 :                     ;*************************************************************************
+(1)  481/     3C0 :                     ;
+(1)  482/     3C0 :                     ; EINGABE NEUER DATEN FUER DAS HOEHERWERTIGE REGISTER
+(1)  483/     3C0 :                     ;
+(1)  484/     3C0 : F5                  Z4AZ	PUSH 	AF
+(1)  485/     3C1 : 21 E8 43            	LD 	HL,HR1
+(1)  486/     3C4 : 23                  	INC 	HL
+(1)  487/     3C5 : ED 6F               	RLD
+(1)  488/     3C7 : F1                  	POP 	AF
+(1)  489/     3C8 : CD 04 03            	CALL 	HDAANZ
+(1)  490/     3CB : C9                  	RET
+(1)  491/     3CC :                     ;*************************************************************************
+(1)  492/     3CC :                     ;
+(1)  493/     3CC :                     ; EINGABE NEUER DATEN FUER EIN REGISTERPAAR (IX, IY, SP, PC)
+(1)  494/     3CC :                     ;
+(1)  495/     3CC : CD CE 02            Z4CZ	CALL 	DASCH
+(1)  496/     3CF : CD 0A 03            	CALL 	LDAANZ
+(1)  497/     3D2 : C9                  	RET
+(1)  498/     3D3 :                     ;*************************************************************************
+(1)  499/     3D3 :                     ;
+(1)  500/     3D3 :                     ; UEBERGANG ZUR DARSTELLUNG DES INHALTS VON AF, DA KEIN NAME EINGEGEBEN
+(1)  501/     3D3 :                     ; WURDE
+(1)  502/     3D3 :                     ;
+(1)  503/     3D3 : FD 36 0E 00         Z2E 	LD 	(IY+H2),00H
+(1)  504/     3D7 : CD 75 03            Z2EM1 	CALL 	RNANZ
+(1)  505/     3DA :                     ;*************************************************************************
+(1)  506/     3DA :                     ;
+(1)  507/     3DA :                     ; UEBERGANG ZUR DARSTELLUNG DES INHALTES DES SPEZIFIZIERTEN REGISTERPRARES
+(1)  508/     3DA :                     ;
+(1)  509/     3DA : FD 7E 0E            Z3E 	LD 	A,(IY+H2)
+(1)  510/     3DD : FE 09               	CP 	9
+(1)  511/     3DF : D2 38 10            	JP	NC,Z4AEM4
+(1)  512/     3E2 : C3 00 10            	JP	LSROM2
+(1)  513/     3E5 : 21 F3 03            NX	LD 	HL,NAMES
+(1)  514/     3E8 : 11 DC 43            	LD 	DE,ANZBER
+(1)  515/     3EB : CD C0 02            	CALL 	TRANS
+(1)  516/     3EE : CD 4B 01            NX1 	CALL 	TASTU
+(1)  517/     3F1 : 18 FB               	JR 	NX1
+(1)  518/     3F3 : 7E 5F               NAMES 	DW 	05F7EH
+(1)  519/     3F5 : 00                  	DB	00H
+(1)  520/     3F6 : CF DD               	DW	0DDCFH
+(1)  521/     3F8 : 00                  	DB	00H
+(1)  522/     3F9 : FD 5B               	DW	05BFDH
+(1)  523/    1000 :                     	ORG 	1000H
+(1)  524/    1000 :                     LSROM2				; BEGINN DES 2. ROMS
+(1)  525/    1000 : CD 4E 03            Z3EM1 	CALL 	RINANZ
+(1)  526/    1003 : FD CB 07 9E         	RES 	BIA,(IY+7)
+(1)  527/    1007 : FD CB 05 DE         	SET 	BIA,(IY+5)
+(1)  528/    100B : FD 36 08 03         	LD 	(IY+PROZ),Z4A
+(1)  529/    100F : C9                  	RET
+(1)  530/    1010 :                     ;*************************************************************************
+(1)  531/    1010 :                     ;
+(1)  532/    1010 :                     ; UEBERGANG ZUR MODIFIKATION DES NIEDERWERTIGEN REGISTERS, ABSPEICHERN DES
+(1)  533/    1010 :                     ; EVENTUELL VERAENDERTEN INHALTS
+(1)  534/    1010 :                     ;
+(1)  535/    1010 : CD 5C 03            Z4AE 	CALL 	RISTA
+(1)  536/    1013 : FD CB 01 5E         	BIT 	BIA,(IY+1)
+(1)  537/    1017 : 20 08               	JR	NZ,Z4AEM1
+(1)  538/    1019 : FD 36 08 04         Z4AEM3 	LD 	(IY+PROZ),Z4
+(1)  539/    101D : CD 4E 03            	CALL 	RINANZ
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 18 - 4/24/2012 15:50:25
+
+
+(1)  540/    1020 : C9                  	RET
+(1)  541/    1021 : FD CB 01 9E         Z4AEM1 	RES 	BIA,(IY+1)
+(1)  542/    1025 : FD 7E 0E            	LD 	A,(IY+H2)
+(1)  543/    1028 : D6 01               	SUB	1
+(1)  544/    102A : 38 08               	JR	C,Z4AEM2
+(1)  545/    102C : FD 77 0E            	LD 	(IY+H2),A
+(1)  546/    102F : CD 75 03            Z4AEM5 	CALL 	RNANZ
+(1)  547/    1032 : 18 E5               	JR 	Z4AEM3
+(1)  548/    1034 : FD 36 0E 0C         Z4AEM2 	LD 	(IY+H2),12
+(1)  549/    1038 : CD 75 03            Z4AEM4 	CALL 	RNANZ
+(1)  550/    103B : CD 4E 03            	CALL 	RINANZ
+(1)  551/    103E : FD 36 08 05         	LD	(IY+PROZ),Z4C
+(1)  552/    1042 : C9                  	RET
+(1)  553/    1043 :                     ;*************************************************************************
+(1)  554/    1043 :                     ;
+(1)  555/    1043 :                     ; UEBERGANG ZUR MODIFIKATION DES HOEHERWERTIGEN REGISTERS, ABSPEICHERN
+(1)  556/    1043 :                     ; DES EVENTUELL MODIFIZIERTEN REGISTERINHALTES
+(1)  557/    1043 :                     ;
+(1)  558/    1043 : CD 5C 03            Z4E 	CALL 	RISTA
+(1)  559/    1046 : FD CB 01 5E         	BIT 	BIA,(IY+1)
+(1)  560/    104A : 20 06               	JR	NZ,Z4EM1
+(1)  561/    104C : FD 34 0E            	INC 	(IY+H2)
+(1)  562/    104F : C3 D7 03            	JP 	Z2EM1
+(1)  563/    1052 : FD CB 01 9E         Z4EM1 	RES 	BIA,(IY+1)
+(1)  564/    1056 : 18 A8               	JR 	Z3EM1
+(1)  565/    1058 :                     ;*************************************************************************
+(1)  566/    1058 :                     ;
+(1)  567/    1058 :                     ; UEBERCfANG ZUR MODIFIKATION DES NAECHSTEN REGISTERPAARES, ABSPEICHERN
+(1)  568/    1058 :                     ; DES MOMENTANEN INHALTES
+(1)  569/    1058 :                     ;
+(1)  570/    1058 : CD 5C 03            Z4CE 	CALL 	RISTA
+(1)  571/    105B : FD CB 01 5E         	BIT 	BIA,(IY+1)
+(1)  572/    105F : 20 0E               	JR	NZ,Z4CEM1
+(1)  573/    1061 : FD 7E 0E            	LD 	A,(IY+H2)
+(1)  574/    1064 : 3C                  	INC 	A
+(1)  575/    1065 : FE 0D               	CP 	13
+(1)  576/    1067 : D2 D3 03            	JP	NC,Z2E
+(1)  577/    106A : FD 77 0E            	LD 	(IY+H2),A
+(1)  578/    106D : 18 C9               	JR 	Z4AEM4
+(1)  579/    106F : FD CB 01 9E         Z4CEM1 	RES 	BIA,(IY+1)
+(1)  580/    1073 : FD 7E 0E            	LD 	A,(IY+H2)
+(1)  581/    1076 : 3D                  	DEC 	A
+(1)  582/    1077 : FE 09               	CP 	9
+(1)  583/    1079 : FD 77 0E            	LD 	(IY+H2),A
+(1)  584/    107C : 30 BA               	JR	NC,Z4AEM4
+(1)  585/    107E : 18 AF               	JR 	Z4AEM5
+(1)  586/    1080 :                     ;*E
+(1)  587/    1080 :                     ;*************************************************************************
+(1)  588/    1080 :                     ;
+(1)  589/    1080 :                     ; UEBERNAHME DER ADRESSE RAMANFANG IN DAS ADRESSREGISTER, DA KEINE ADRESSE
+(1)  590/    1080 :                     ; EINGEGEBEN WURDE.
+(1)  591/    1080 :                     ; DARSTELLUNG DES INHALTES DER SPEICHERADRESSE
+(1)  592/    1080 :                     ;
+(1)  593/    1080 : 21 00 40            Z5E 	LD 	HL,RAMANF
+(1)  594/    1083 : 22 EA 43            Z5EM1 	LD 	(HR2),HL
+(1)  595/    1086 : E5                  	PUSH 	HL
+(1)  596/    1087 : CD 2D 03            	CALL 	ADRAUS
+(1)  597/    108A : E1                  	POP 	HL
+(1)  598/    108B : FD CB 05 9E         	RES 	BIA,(IY+5)
+(1)  599/    108F : 66                  	LD 	H,(HL)
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 19 - 4/24/2012 15:50:25
+
+
+(1)  600/    1090 : FD 74 0C            	LD 	(IY+H1),H
+(1)  601/    1093 : CD 38 03            	CALL 	DAAUS
+(1)  602/    1096 : FD 36 08 08         	LD 	(IY+PROZ),Z7
+(1)  603/    109A : C9                  	RET
+(1)  604/    109B :                     ;*************************************************************************
+(1)  605/    109B :                     ;
+(1)  606/    109B :                     ; EINGABE DER ERSTEN ZIFFER EINER SPEICHERADRESSE
+(1)  607/    109B :                     ;
+(1)  608/    109B : FD 34 08            Z5Z	INC 	(IY+PROZ)
+(1)  609/    109E : 21 00 00            Z5ZM1 	LD 	HL,00H
+(1)  610/    10A1 : 22 E8 43            	LD 	(HR1), HL
+(1)  611/    10A4 :                     ;*************************************************************************
+(1)  612/    10A4 :                     ;
+(1)  613/    10A4 :                     ; EINGABE EINER ZIFFER EINER SPEICHERADRESSE
+(1)  614/    10A4 :                     ;
+(1)  615/    10A4 : CD CE 02            Z6Z 	CALL 	DASCH
+(1)  616/    10A7 : CD D9 02            	CALL 	ADRANZ
+(1)  617/    10AA : C9                  	RET
+(1)  618/    10AB :                     ;*************************************************************************
+(1)  619/    10AB :                     ;
+(1)  620/    10AB :                     ; UEBERNAHME DER EINGEGEBENEN SPEICHERADRESSE UND DARSTELLUNG DES INHALTES
+(1)  621/    10AB :                     ; DER ADRESSE
+(1)  622/    10AB :                     ;
+(1)  623/    10AB : 2A E8 43            Z6E 	LD 	HL,(HR1)
+(1)  624/    10AE : 18 D3               	JR 	Z5EM1
+(1)  625/    10B0 :                     ;*************************************************************************
+(1)  626/    10B0 :                     ;
+(1)  627/    10B0 :                     ; UEBERGANG ZUR DARSTELLUNG DER NAECHSTEN ADRESSE, ABSPEICHERN DER
+(1)  628/    10B0 :                     ; VORHER EVENTUELL MODIFIZIERTEN DATEN
+(1)  629/    10B0 :                     ;
+(1)  630/    10B0 : 2A EA 43            Z7E 	LD	HL,(HR2) 	; ADRESSE
+(1)  631/    10B3 : FD 5E 0C            	LD 	E,(IY+H1) 	; DATEN
+(1)  632/    10B6 : 73                  	LD 	(HL),E
+(1)  633/    10B7 : FD CB 01 5E         	BIT 	BIA,(IY+1) 	; INKREMENTIEREN ODER DEKREMENTIEREN?
+(1)  634/    10BB : 20 03               	JR	NZ, Z7EM1
+(1)  635/    10BD : 23                  	INC 	HL
+(1)  636/    10BE : 18 05               	JR 	Z7EM2
+(1)  637/    10C0 : 2B                  Z7EM1 	DEC 	HL
+(1)  638/    10C1 : FD CB 01 9E         	RES 	BIA,(IY+1)
+(1)  639/    10C5 : 18 BC               Z7EM2 	JR 	Z5EM1
+(1)  640/    10C7 :                     ;*E
+(1)  641/    10C7 :                     ;*************************************************************************
+(1)  642/    10C7 :                     ;
+(1)  643/    10C7 :                     ; UEBERGANG ZUR (ANZEIGE UND) EINGABE EINES PRUEFPUNKTES
+(1)  644/    10C7 :                     ;
+(1)  645/    10C7 : 11 41 57            Z8E 	LD 	DE,ANZBRE
+(1)  646/    10CA : CD AC 02            	CALL 	KOMDAR
+(1)  647/    10CD : 2A E6 43            	LD 	HL,(BREAKP)
+(1)  648/    10D0 : 22 E8 43            	LD 	(HR1), HL
+(1)  649/    10D3 : 7D                  	LD 	A,L
+(1)  650/    10D4 : B4                  	OR 	H
+(1)  651/    10D5 : 28 03               	JR	Z,Z8EM1		; KEINE DARSTELLUNG BEI 0000
+(1)  652/    10D7 : CD 2D 03            	CALL 	ADRAUS
+(1)  653/    10DA : FD 36 08 0B         Z8EM1 	LD 	(IY+PROZ),Z10
+(1)  654/    10DE : C9                  	RET
+(1)  655/    10DF :                     ;*************************************************************************
+(1)  656/    10DF :                     ;
+(1)  657/    10DF :                     ; UEBERGANG ZUR PRUEFPUNKTEINGA$E NACH ERFOLGTER ADRESSEINGABE
+(1)  658/    10DF :                     ;
+(1)  659/    10DF : 2A E8 43            Z9E 	LD 	HL,(HR1)
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 20 - 4/24/2012 15:50:25
+
+
+(1)  660/    10E2 : 22 BA 43            	LD 	(SYSP26),HL
+(1)  661/    10E5 : 18 E0               	JR 	Z8E
+(1)  662/    10E7 :                     ;*************************************************************************
+(1)  663/    10E7 :                     ;
+(1)  664/    10E7 :                     ; UEBERNAHME DES PRUEFPUNKTES UND ANSPRUNG DES ANWENDERPROGRAMMES
+(1)  665/    10E7 :                     ;
+(1)  666/    10E7 : 2A E8 43            Z10E 	LD 	HL,(HR1)
+(1)  667/    10EA : 22 E6 43            	LD 	(BREAKP),HL
+(1)  668/    10ED : 7E                  	LD 	A,(HL)
+(1)  669/    10EE : 32 EE 43            	LD 	(HR4),A 	; KODE RETTEN
+(1)  670/    10F1 : 36 EF               	LD 	(HL),0EFH
+(1)  671/    10F3 : FD 36 08 00         	LD 	(IY+PROZ),Z1
+(1)  672/    10F7 : FD 36 09 10         	LD 	(IY+NMIZ),10H
+(1)  673/    10FB : E1                  	POP 	HL 		; STACKPOINTER KORRIGIEREN
+(1)  674/    10FC :                     ;*E
+(1)  675/    10FC :                     ;*************************************************************************
+(1)  676/    10FC :                     ;
+(1)  677/    10FC :                     ; WIEDERHERSTELLUNG DER REGISTERINHALTE DES PROZESSORS UND DIREKTER
+(1)  678/    10FC :                     ; AUFRUF DES ANWENDERPROGRAMMS
+(1)  679/    10FC :                     ;
+(1)  680/    10FC : DB 82               Z10EM1 	IN 	A,(PIOD2)
+(1)  681/    10FE : CB B7               	RES 	BIE,A
+(1)  682/    1100 : D3 82               	OUT 	(PIOD2),A 	; NMI-FF LOESCH.
+(1)  683/    1102 : D1                  	POP 	DE 		; PC
+(1)  684/    1103 : E1                  	POP 	HL 		; SP
+(1)  685/    1104 : ED 53 EA 43         	LD 	(HR2),DE
+(1)  686/    1108 : 22 EC 43            	LD	(HR3),HL
+(1)  687/    110B : FD E1               	POP 	IY
+(1)  688/    110D : DD E1               	POP 	IX
+(1)  689/    110F : F1                  	POP 	AF 		; I EI
+(1)  690/    1110 : ED 47               	LD 	I,A
+(1)  691/    1112 : 26 C3               	LD 	H,0C3H 		; KODE FUER 'JP'
+(1)  692/    1114 : DA 1B 11            	JP	C,Z10EM2 	; INTERRUPTS GESTATTET
+(1)  693/    1117 : 2E F3               	LD 	L,0F3H 		; KODE FUER 'DI'
+(1)  694/    1119 : 18 04               	JR 	Z10EM3
+(1)  695/    111B : 2E FB               Z10EM2 	LD 	L,0FBH 		; KODE FUER `EI'
+(1)  696/    111D : 18 00               	JR 	Z10EM3
+(1)  697/    111F : 22 E8 43            Z10EM3 	LD 	(HR1),HL
+(1)  698/    1122 : E1                  	POP 	HL
+(1)  699/    1123 : D1                  	POP 	DE
+(1)  700/    1124 : C1                  	POP 	BC
+(1)  701/    1125 : F1                  	POP	AF
+(1)  702/    1126 : 08                  	EX	AF,AF'
+(1)  703/    1127 : D9                  	EXX
+(1)  704/    1128 : E1                  	POP 	HL
+(1)  705/    1129 : D1                  	POP 	DE
+(1)  706/    112A : C1                  	POP 	BC
+(1)  707/    112B : F1                  	POP 	AF
+(1)  708/    112C : ED 7B EC 43         	LD 	SP,(HR3)
+(1)  709/    1130 : C3 E8 43            	JP 	HR1
+(1)  710/    1133 :                     ;*E
+(1)  711/    1133 :                     ;*************************************************************************
+(1)  712/    1133 :                     ;
+(1)  713/    1133 :                     ; AUSFUEHRUHG EINES SCHRITTES NACH EINGABE EINER ADRESSE
+(1)  714/    1133 :                     ;
+(1)  715/    1133 : 2A E8 43            Z13E	LD 	HL,(HR1)
+(1)  716/    1136 : 22 BA 43            	LD 	(SYSP26),HL 	; PC
+(1)  717/    1139 :                     ;*************************************************************************
+(1)  718/    1139 :                     ;
+(1)  719/    1139 :                     ; AUSFUEHRUNG EINES SCHRTTES OHNE AENDERUNG DES BEFEHLSZAEHLERS
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 21 - 4/24/2012 15:50:25
+
+
+(1)  720/    1139 :                     ;
+(1)  721/    1139 : FD 36 08 0E         Z12E 	LD	(IY+PROZ),Z14
+(1)  722/    113D :                     ;*************************************************************************
+(1)  723/    113D :                     ;
+(1)  724/    113D :                     ; FORTSETZUNG DES SCHRITTBETRIEBES
+(1)  725/    113D :                     ;
+(1)  726/    113D : FD 36 09 03         Z14E 	LD 	(IY+NMIZ),03H
+(1)  727/    1141 : 2A BA 43            	LD 	HL,(SYSP26) 	; PC
+(1)  728/    1144 : 7E                  	LD	A,(HL)
+(1)  729/    1145 : E6 C7               	AND 	0C7H
+(1)  730/    1147 : FE C7               	CP 	0C7H
+(1)  731/    1149 : C8                  	RET	Z
+(1)  732/    114A : E1                  	POP 	HL
+(1)  733/    114B :                     ;*************************************************************************
+(1)  734/    114B :                     ;
+(1)  735/    114B :                     ; START DES ZAEHLERS ZUR AUSFUEHRUNG EINES BEFEHLES
+(1)  736/    114B :                     ;
+(1)  737/    114B : 3E 05               Z10EM4	LD	A,05H
+(1)  738/    114D : D3 88               	OUT 	(CTC),A
+(1)  739/    114F : 3E 15               	LD 	A,ZK2
+(1)  740/    1151 : D3 88               	OUT 	(CTC),A
+(1)  741/    1153 : CB 47               	BIT 	0,A
+(1)  742/    1155 : 18 A5               	JR 	Z10EM1
+(1)  743/    1157 : =15H                ZK2 	EQU 	21
+(1)  744/    1157 :                     ;*E
+(1)  745/    1157 :                     ;*************************************************************************
+(1)  746/    1157 :                     ;
+(1)  747/    1157 :                     ; DEFINITION EINER FUNKTION BEIM KOMMANDO 'FUNKT' DURCH DIE HEXRDEZIMAL-
+(1)  748/    1157 :                     ; TASTATUR
+(1)  749/    1157 :                     ;
+(1)  750/    1157 : FE 06               Z16Z 	CP 	6
+(1)  751/    1159 : 30 07               	JR	NC,Z16ZM1
+(1)  752/    115B : C6 08               	ADD 	A,8
+(1)  753/    115D : 07                  	RLCA
+(1)  754/    115E : E1                  	POP 	HL
+(1)  755/    115F : C3 2B 01            	JP 	TASTB1
+(1)  756/    1162 : D6 06               Z16ZM1 	SUB 	6
+(1)  757/    1164 : FE 06               	CP	6 	; ENTSCHEIDUNG IN WELCHEM ROMBEREICH
+(1)  758/    1166 : 30 04               	JR	NC,Z16ZM2
+(1)  759/    1168 : 26 20               	LD 	H,20H
+(1)  760/    116A : 18 04               	JR 	Z16ZM3
+(1)  761/    116C : D6 06               Z16ZM2 	SUB 	6
+(1)  762/    116E : 26 30               	LD 	H,30H
+(1)  763/    1170 : 4F                  Z16ZM3 	LD 	C,A
+(1)  764/    1171 : CB 27               	SLA 	A
+(1)  765/    1173 : 81                  	ADD 	A,C
+(1)  766/    1174 : 6F                  	LD 	L,A
+(1)  767/    1175 :                     ;*************************************************************************
+(1)  768/    1175 :                     ;
+(1)  769/    1175 :                     ; ANSPRUNG EINES VORGEWAEHLTEN KOMMANDOS (FU 6 BIS FU F)
+(1)  770/    1175 :                     ;
+(1)  771/    1175 : 7E                  	LD 	A,(HL)
+(1)  772/    1176 : FE C3               	CP 	0C3H
+(1)  773/    1178 : C0                  	RET	NZ
+(1)  774/    1179 : FD 36 08 00         	LD 	(IY+PROZ),Z1
+(1)  775/    117D : E9                  	JP 	(HL)
+(1)  776/    117E :                     ;*E
+(1)  777/    117E :                     ;*************************************************************************
+(1)  778/    117E :                     ;
+(1)  779/    117E :                     ; UEBERGANG ZUR EINGABE DER ENDADRESSE FUR DIE MAGNETBANDEINGABE NACH ER-
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 22 - 4/24/2012 15:50:25
+
+
+(1)  780/    117E :                     ; FOLGTER EINGABE DER ANFANGSADRESSE
+(1)  781/    117E :                     ;
+(1)  782/    117E : 11 F5 73            Z18E 	LD 	DE,ANZMSE
+(1)  783/    1181 : 2A E8 43            Z18EM1 	LD 	HL,(HR1)
+(1)  784/    1184 : 22 EA 43            	LD 	(HR2),HL 	; ANFANGSADRESSE
+(1)  785/    1187 : FD 34 08            Z18EM2 	INC 	(IY+PROZ)
+(1)  786/    118A : CD AC 02            	CALL 	KOMDAR
+(1)  787/    118D : C9                  	RET
+(1)  788/    118E :                     ;*************************************************************************
+(1)  789/    118E :                     ;
+(1)  790/    118E :                     ; UEBERNAHME DER EINGEGEBENEN ENDRESSE UND AUSGABE DER FRAGE 'READY ?'
+(1)  791/    118E :                     ; AN DEN BEDIENER
+(1)  792/    118E :                     ;
+(1)  793/    118E : FD 34 08            Z20E 	INC 	(IY+PROZ)
+(1)  794/    1191 : CD BA 02            	CALL 	MBREADY
+(1)  795/    1194 : C9                  	RET
+(1)  796/    1195 :                     ;*************************************************************************
+(1)  797/    1195 :                     ;
+(1)  798/    1195 :                     ; AUSFUEHRUNG DES KOMMANDOS 'MAGNETBANDEINGABE' NACH ERFOLGTER EINGABE DER
+(1)  799/    1195 :                     ; ENDADRESSE
+(1)  800/    1195 :                     ;
+(1)  801/    1195 : FD E5               Z21AE 	PUSH 	IY
+(1)  802/    1197 : CD D5 11            	CALL 	DL 		; MBEINGABE
+(1)  803/    119A : FD 22 EA 43         	LD	(HR2),IY	; FEHLERSCHREIBZEIGER
+(1)  804/    119E : FD E1               	POP 	IY
+(1)  805/    11A0 : 21 F0 43            	LD	HL,FSTACK
+(1)  806/    11A3 : 22 EE 43            	LD	(HR4),HL
+(1)  807/    11A6 : FD 36 08 15         	LD 	(IY+PROZ),Z21
+(1)  808/    11AA : 11 11 73            	LD 	DE,ANZLFE
+(1)  809/    11AD : CD AC 02            	CALL 	KOMDAR
+(1)  810/    11B0 :                     ;*************************************************************************
+(1)  811/    11B0 :                     ;
+(1)  812/    11B0 :                     ; AUSGABE DES NAECHSTEN LESEFEHLERS BZW. DER FERTIGMELDUNG
+(1)  813/    11B0 :                     ;
+(1)  814/    11B0 : 2A EE 43            Z21E 	LD 	HL,(HR4)
+(1)  815/    11B3 : ED 5B EA 43         	LD 	DE,(HR2)
+(1)  816/    11B7 : E5                  	PUSH 	HL
+(1)  817/    11B8 : (MACRO)             	SBWC
+(1)  817/    11B8 : A7                          AND     A
+(1)  817/    11B9 : ED 52                       SBC     HL,DE
+(1)  818/    11BB : E1                  	POP 	HL
+(1)  819/    11BC : CA 7E 13            	JP	Z,Z39EM2 	; ENDE
+(1)  820/    11BF : 5E                  	LD	E,(HL)
+(1)  821/    11C0 : 23                  	INC 	HL
+(1)  822/    11C1 : 56                  	LD 	D,(HL)
+(1)  823/    11C2 : 23                  	INC 	HL
+(1)  824/    11C3 : 22 EE 43            	LD 	(HR4),HL
+(1)  825/    11C6 : EB                  	EX 	DE,HL
+(1)  826/    11C7 : CD 2D 03            	CALL	ADRAUS
+(1)  827/    11CA : C9                  	RET
+(1)  828/    11CB :                     ;*************************************************************************
+(1)  829/    11CB :                     ;
+(1)  830/    11CB :                     ; AUSFUEHRUNG DES KOMMANDOS 'MAGNETBANDAUSGABE' HACH ERFOLGTER
+(1)  831/    11CB :                     ; EINGABE VON ANFANGS- UND ENDADRESSE
+(1)  832/    11CB :                     ;
+(1)  833/    11CB : FD E5               Z25AE	PUSH	IY
+(1)  834/    11CD : CD C0 12            	CALL 	DS 		; AUSFUEHRUNG MBOUT
+(1)  835/    11D0 : FD E1               	POP 	IY
+(1)  836/    11D2 : C3 7E 13            	JP	Z39EM2
+(1)  837/    11D5 :                     ;*E
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 23 - 4/24/2012 15:50:25
+
+
+(1)  838/    11D5 :                     ;*************************************************************************
+(1)  839/    11D5 :                     ;
+(1)  840/    11D5 :                     ; UNTERPROGRAMM FUER DIE MAGNETBANDEINGASE
+(1)  841/    11D5 :                     ;
+(1)  842/    11D5 :                     ; FUNKTION: DAS PROGRAMM VERSUCHT, VOM MAGNETBANDGERAET DATEN ZU LESEN
+(1)  843/    11D5 :                     ;	    UND IM RAM ABZUSPEICHERN. DIE ANFANGSADRESSE BEFINDET SICH IN
+(1)  844/    11D5 :                     ;	    HR2 UND DIE ENDADRESSE IN HR1. AUF DER ADRESSE FSTACK BEGIN-
+(1)  845/    11D5 :                     ;	    NEND WIRD EINE FEHLERLISTE ERZEUGT. IN IY BEFINDET SICH DAS
+(1)  846/    11D5 :                     ;	    ENDE DER LISTE.
+(1)  847/    11D5 :                     ;	    DAS PROGRAMM KEHRT NICHT ZURUECK, WENN VOM MAGNETBAND NICHT
+(1)  848/    11D5 :                     ;	    GENUEGEND DATEN EMPFANGEN WERDEN.
+(1)  849/    11D5 :                     ; ZERSTOERT: AF,BC,DE,HL,IX,IY
+(1)  850/    11D5 :                     ;
+(1)  851/    11D5 : =300H               NTA 	EQU 	768 		; ANZAHL DER RECHNERTAKTE PRO DATENBIT
+(1)  852/    11D5 : FD 21 F0 43         DL 	LD 	IY,FSTACK
+(1)  853/    11D9 : 2A EA 43            	LD 	HL,(HR2)
+(1)  854/    11DC : CD 1B 12            DLM0 	CALL 	BL
+(1)  855/    11DF : 28 1D               	JR	Z,DLM1 		; KEIN FEHLER
+(1)  856/    11E1 : 11 20 00            	LD 	DE,32
+(1)  857/    11E4 : (MACRO)             	SBWC
+(1)  857/    11E4 : A7                          AND     A
+(1)  857/    11E5 : ED 52                       SBC     HL,DE
+(1)  858/    11E7 : FD 75 00            	LD 	(IY+0),L
+(1)  859/    11EA : FD 23               	INC 	IY
+(1)  860/    11EC : FD 74 00            	LD 	(IY+0),H
+(1)  861/    11EF : FD 23               	INC	IY
+(1)  862/    11F1 : 19                  	ADD 	HL,DE
+(1)  863/    11F2 : E5                  	PUSH	HL
+(1)  864/    11F3 : FD E5               	PUSH 	IY
+(1)  865/    11F5 : E1                  	POP 	HL
+(1)  866/    11F6 : 11 00 44            	LD 	DE,RAMEND
+(1)  867/    11F9 : (MACRO)             	SBWC
+(1)  867/    11F9 : A7                          AND     A
+(1)  867/    11FA : ED 52                       SBC     HL,DE
+(1)  868/    11FC : E1                  	POP 	HL
+(1)  869/    11FD : D0                  	RET	NC
+(1)  870/    11FE : EB                  DLM1	EX	DE,HL
+(1)  871/    11FF : 2A E8 43            	LD 	HL,(HR1) 	; ENDADRESSE
+(1)  872/    1202 : (MACRO)             	SBWC
+(1)  872/    1202 : A7                          AND     A
+(1)  872/    1203 : ED 52                       SBC     HL,DE
+(1)  873/    1205 : EB                  	EX 	DE,HL
+(1)  874/    1206 : F8                  	RET	M
+(1)  875/    1207 : 18 D3               	JR 	DLM0
+(1)  876/    1209 :                     ;*************************************************************************
+(1)  877/    1209 :                     ;
+(1)  878/    1209 :                     ; UNTERPROGRAMM ZUM FINDEN EINER FLANKE IM LESESIGNAL
+(1)  879/    1209 :                     ; EXIT: 36 TAKTE
+(1)  880/    1209 :                     ;
+(1)  881/    1209 : DB 82               FIFLA 	IN 	A,(PIOD2)
+(1)  882/    120B : A8                  	XOR 	B
+(1)  883/    120C : CB 4F               	BIT 	BID,A
+(1)  884/    120E : 28 F9               	JR	Z,FIFLA
+(1)  885/    1210 : C9                  	RET
+(1)  886/    1211 :                     ;*************************************************************************
+(1)  887/    1211 :                     ;
+(1)  888/    1211 :                     ; UNTERPROGRAMM ZUR EINABE EINES BITS
+(1)  889/    1211 :                     ; ENTRY: 28 TAKTE, EXIT: 51 TAKTE
+(1)  890/    1211 :                     ;
+(1)  891/    1211 : DB 82               BITIN 	IN 	A,(PIOD2)
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 24 - 4/24/2012 15:50:25
+
+
+(1)  892/    1213 : A8                  	XOR 	B
+(1)  893/    1214 : CB 4F               	BIT 	BID,A
+(1)  894/    1216 : F5                  	PUSH 	AF
+(1)  895/    1217 : A8                  	XOR 	B
+(1)  896/    1218 : 47                  	LD 	B,A
+(1)  897/    1219 : F1                  	POP 	AF
+(1)  898/    121A : C9                  	RET 			; I=28/A=53
+(1)  899/    121B :                     ;*************************************************************************
+(1)  900/    121B :                     ;
+(1)  901/    121B :                     ; UNTERPROGRAMM ZUR EINGABE EINES DATENBLOCKS VON 32 BYTE UND 2 BYTE
+(1)  902/    121B :                     ; PRUEFSUMME
+(1)  903/    121B :                     ;
+(1)  904/    121B : CD 11 12            BL 	CALL 	BITIN
+(1)  905/    121E : CD 09 12            	CALL 	FIFLA
+(1)  906/    1221 : 0E 07               	LD 	C,7
+(1)  907/    1223 : 11 10 09            BLM1 	LD 	DE,(BLN11 << 8) | BLN9
+(1)  908/    1226 : (MACRO)             	SWAIT 	BLN1
+(1)  908/    1226 : 3E 07                       LD      A,BLN1
+(1)  908/    1228 : 3D                  SWSYM   DEC     A
+(1)  908/    1229 : 20 FD                       JR      NZ,SWSYM
+(1)  909/    122B : CD 11 12            	CALL 	BITIN
+(1)  910/    122E : CD 11 12            BLMX 	CALL 	BITIN
+(1)  911/    1231 : 20 E8               	JR	NZ,BL 		; VERAENDERUNG ERKANNT
+(1)  912/    1233 : 15                  	DEC 	D
+(1)  913/    1234 : 20 F8               	JR	NZ,BLMX
+(1)  914/    1236 : 0D                  	DEC 	C
+(1)  915/    1237 : 28 0C               	JR	Z,BLM4 		; SYNC.FELD ERKANNT
+(1)  916/    1239 : DB 82               BLM2 	IN 	A,(PIOD2)
+(1)  917/    123B : A8                  	XOR 	B
+(1)  918/    123C : CB 4F               	BIT 	BID,A
+(1)  919/    123E : 20 E3               	JR	NZ,BLM1 	; FLANK ERKANNT
+(1)  920/    1240 : 1D                  	DEC 	E
+(1)  921/    1241 : 20 F6               	JR	NZ,BLM2 	; WARTEN
+(1)  922/    1243 : 18 D6               	JR 	BL 		; TIME OUT
+(1)  923/    1245 :                     ; 7 NULLEN SIND ERKANNT WORDEN
+(1)  924/    1245 : CD 09 12            BLM4 	CALL 	FIFLA
+(1)  925/    1248 : (MACRO)             	SWAIT 	BLN3
+(1)  925/    1248 : 3E 44                       LD      A,BLN3
+(1)  925/    124A : 3D                  SWSYM   DEC     A
+(1)  925/    124B : 20 FD                       JR      NZ,SWSYM
+(1)  926/    124D : CD 11 12            	CALL 	BITIN
+(1)  927/    1250 : 20 F3               	JR	NZ,BLM4 	; AUF 1 WARTEN
+(1)  928/    1252 : CD 09 12            	CALL 	FIFLA
+(1)  929/    1255 : (MACRO)             	SWAIT	BLN4
+(1)  929/    1255 : 3E 1E                       LD      A,BLN4
+(1)  929/    1257 : 3D                  SWSYM   DEC     A
+(1)  929/    1258 : 20 FD                       JR      NZ,SWSYM
+(1)  930/    125A : CD A1 12            	CALL 	WL
+(1)  931/    125D : 0E 10               	LD 	C,16
+(1)  932/    125F : D5                  	PUSH 	DE
+(1)  933/    1260 : DD E1               	POP 	IX 		; CRC ANFANGSWERT
+(1)  934/    1262 : (MACRO)             	SWAIT 	BLN10
+(1)  934/    1262 : 3E 1A                       LD      A,BLN10
+(1)  934/    1264 : 3D                  SWSYM   DEC     A
+(1)  934/    1265 : 20 FD                       JR      NZ,SWSYM
+(1)  935/    1267 : CD A1 12            BLM5 	CALL	WL
+(1)  936/    126A : DD 19               	ADD 	IX,DE
+(1)  937/    126C : C5                  	PUSH 	BC
+(1)  938/    126D : 4D                  	LD 	C,L
+(1)  939/    126E : 44                  	LD 	B,H
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 25 - 4/24/2012 15:50:25
+
+
+(1)  940/    126F : 2A E8 43            	LD 	HL,(HR1) 	; ENDADRESSE
+(1)  941/    1272 : AF                  	XOR	A
+(1)  942/    1273 : ED 42               	SBC 	HL,BC
+(1)  943/    1275 : 69                  	LD	L,C
+(1)  944/    1276 : 60                  	LD 	H,B
+(1)  945/    1277 : C1                  	POP 	BC
+(1)  946/    1278 : 38 05               	JR	C,BLM6
+(1)  947/    127A : 73                  	LD 	(HL),E
+(1)  948/    127B : 23                  	INC	HL
+(1)  949/    127C : 72                  	LD	(HL),D
+(1)  950/    127D : 18 06               	JR 	BLM7
+(1)  951/    127F : (MACRO)             BLM6 	SWAIT 	BLN5
+(1)  951/    127F : 3E 01                       LD      A,BLN5
+(1)  951/    1281 : 3D                  SWSYM   DEC     A
+(1)  951/    1282 : 20 FD                       JR      NZ,SWSYM
+(1)  952/    1284 : 23                  	INC	HL
+(1)  953/    1285 : 23                  BLM7 	INC 	HL
+(1)  954/    1286 : 0D                  	DEC 	C
+(1)  955/    1287 : 28 07               	JR	Z,BLM8
+(1)  956/    1289 : (MACRO)             	SWAIT 	BLN6
+(1)  956/    1289 : 3E 12                       LD      A,BLN6
+(1)  956/    128B : 3D                  SWSYM   DEC     A
+(1)  956/    128C : 20 FD                       JR      NZ,SWSYM
+(1)  957/    128E : 18 D7               	JR 	BLM5
+(1)  958/    1290 : (MACRO)             BLM8 	SWAIT	BLN7
+(1)  958/    1290 : 3E 12                       LD      A,BLN7
+(1)  958/    1292 : 3D                  SWSYM   DEC     A
+(1)  958/    1293 : 20 FD                       JR      NZ,SWSYM
+(1)  959/    1295 : CD A1 12            	CALL 	WL 		; PRUEFSUMME LESEN
+(1)  960/    1298 : EB                  	EX 	DE,HL
+(1)  961/    1299 : DD E5               	PUSH 	IX
+(1)  962/    129B : C1                  	POP 	BC
+(1)  963/    129C : AF                  	XOR 	A
+(1)  964/    129D : ED 42               	SBC 	HL,BC
+(1)  965/    129F : EB                  	EX 	DE,HL
+(1)  966/    12A0 : C9                  	RET
+(1)  967/    12A1 :                     ;*************************************************************************
+(1)  968/    12A1 :                     ;
+(1)  969/    12A1 :                     ; ZEITKONSTANTEN FUER BL
+(1)  970/    12A1 :                     ;
+(1)  971/    12A1 : =7H                 BLN1 	EQU 	(NTA/4-67)/16
+(1)  972/    12A1 : =44H                BLN3 	EQU 	((3*NTA)/2-58)/16
+(1)  973/    12A1 : =1EH                BLN4 	EQU 	((3*NTA)/4-92)/16
+(1)  974/    12A1 : =1H                 BLN5 	EQU 	1
+(1)  975/    12A1 : =12H                BLN6 	EQU 	((3*NTA)/4-284)/16
+(1)  976/    12A1 : =12H                BLN7 	EQU 	((3*NTA)/4-277)/16
+(1)  977/    12A1 : =10H                BLN9 	EQU 	(NTA)/46
+(1)  978/    12A1 : =1AH                BLN10 	EQU 	((3*NTA)/4-160)/16
+(1)  979/    12A1 : =9H                 BLN11 	EQU 	((5*NTA)/4)/104
+(1)  980/    12A1 :                     ;*************************************************************************
+(1)  981/    12A1 :                     ;
+(1)  982/    12A1 :                     ; UNTERPROGRAMM ZUM EINLESEN EINES WORTES (2 BYTE)
+(1)  983/    12A1 :                     ; ENTRY: 63 TAKTE, EXIT: 72 TAKTE
+(1)  984/    12A1 :                     ;
+(1)  985/    12A1 : E5                  WL	PUSH 	HL 		; I=64 R=83
+(1)  986/    12A2 : 2E 10               	LD 	L,16
+(1)  987/    12A4 : CD 11 12            WLM0	CALL 	BITIN
+(1)  988/    12A7 : 20 03               	JR	NZ,WLM1
+(1)  989/    12A9 : AF                  	XOR 	A
+(1)  990/    12AA : 18 01               	JR 	WLM2
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 26 - 4/24/2012 15:50:25
+
+
+(1)  991/    12AC : 37                  WLM1 	SCF
+(1)  992/    12AD : CB 1A               WLM2 	RR 	D
+(1)  993/    12AF : CB 1B               	RR 	E
+(1)  994/    12B1 : CD 09 12            	CALL 	FIFLA
+(1)  995/    12B4 : 2D                  	DEC 	L
+(1)  996/    12B5 : 28 07               	JR	Z,WLM3
+(1)  997/    12B7 : (MACRO)             	SWAIT	WLN1
+(1)  997/    12B7 : 3E 1E                       LD      A,WLN1
+(1)  997/    12B9 : 3D                  SWSYM   DEC     A
+(1)  997/    12BA : 20 FD                       JR      NZ,SWSYM
+(1)  998/    12BC : 18 E6               	JR	WLM0
+(1)  999/    12BE : E1                  WLM3	POP	HL
+(1) 1000/    12BF : C9                  	RET
+(1) 1001/    12C0 :                     ;*************************************************************************
+(1) 1002/    12C0 :                     ;
+(1) 1003/    12C0 :                     ; ZEITKONSTANTEN FUER WL
+(1) 1004/    12C0 :                     ;
+(1) 1005/    12C0 : =1EH                WLN1	EQU	((3*NTA)/4-81)/16
+(1) 1006/    12C0 :                     ;*E
+(1) 1007/    12C0 :                     ;*************************************************************************
+(1) 1008/    12C0 :                     ;
+(1) 1009/    12C0 :                     ; UNTERPROGRAMM ZUR AUSGABE EINES DATENBEREICHES AUF DAS MAGNETBAND
+(1) 1010/    12C0 :                     ; DIE ANFANGSADRESSE BEFINDET SICH IN HR2, DIE ENDADRESSE IN HR1.
+(1) 1011/    12C0 :                     ;
+(1) 1012/    12C0 :                     ; ZERSTOERT: AF,BC,DE,HL,IX
+(1) 1013/    12C0 :                     ;
+(1) 1014/    12C0 : 2A EA 43            DS 	LD 	HL,(HR2) 	; ANFANGSADRESSE
+(1) 1015/    12C3 : CD DB 12            	CALL 	BSA 		; ANFANGSBLOCK
+(1) 1016/    12C6 : EB                  DS1 	EX 	DE,HL
+(1) 1017/    12C7 : 2A E8 43            	LD 	HL,(HR1) 	; ENDE
+(1) 1018/    12CA : (MACRO)             	SBWC
+(1) 1018/    12CA : A7                          AND     A
+(1) 1018/    12CB : ED 52                       SBC     HL,DE
+(1) 1019/    12CD : EB                  	EX 	DE,HL
+(1) 1020/    12CE : F8                  	RET	M
+(1) 1021/    12CF : CD E0 12            	CALL 	BS
+(1) 1022/    12D2 : 18 F2               	JR 	DS1
+(1) 1023/    12D4 : DB 82               FLOUT 	IN 	A,(PIOD2)
+(1) 1024/    12D6 : EE 04               	XOR 	MASK 		; E=46,O=10
+(1) 1025/    12D8 : D3 82               	OUT 	(PIOD2),A
+(1) 1026/    12DA : C9                  	RET
+(1) 1027/    12DB :                     ;*************************************************************************
+(1) 1028/    12DB :                     ;
+(1) 1029/    12DB :                     ; UNTERPROGRAMM ZUR AUSGABE EINES BLOCKES
+(1) 1030/    12DB :                     ; ENTRY: 108 TAKTE, EXIT:25 TAKTE
+(1) 1031/    12DB :                     ;
+(1) 1032/    12DB : 11 D0 07            BSA	LD 	DE,2000
+(1) 1033/    12DE : 18 03               	JR 	BSX
+(1) 1034/    12E0 : 11 0E 00            BS 	LD 	DE,14
+(1) 1035/    12E3 : (MACRO)             BSX 	WAIT 	(2*NTA-77)/13
+(1) 1035/    12E3 : 06 70                       LD      B,(2*NTA-77)/13
+(1) 1035/    12E5 : 10 FE                       DJNZ    $
+(1) 1036/    12E7 : CD D4 12            	CALL	FLOUT
+(1) 1037/    12EA : 1B                  	DEC 	DE
+(1) 1038/    12EB : 7B                  	LD 	A,E
+(1) 1039/    12EC : B2                  	OR 	D
+(1) 1040/    12ED : 20 F4               	JR	NZ,BSX
+(1) 1041/    12EF : 0E 02               	LD 	C,2
+(1) 1042/    12F1 : (MACRO)             BSM0	WAIT 	BSN5
+(1) 1042/    12F1 : 06 35                       LD      B,BSN5
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 27 - 4/24/2012 15:50:25
+
+
+(1) 1042/    12F3 : 10 FE                       DJNZ    $
+(1) 1043/    12F5 : CD D4 12            	CALL 	FLOUT
+(1) 1044/    12F8 : 0D                  	DEC 	C
+(1) 1045/    12F9 : 11 00 00            	LD 	DE,0000H
+(1) 1046/    12FC : 20 F3               	JR	NZ,BSM0
+(1) 1047/    12FE : D5                  	PUSH 	DE
+(1) 1048/    12FF : DD E1               	POP 	IX
+(1) 1049/    1301 : (MACRO)             	WAIT 	BSN0
+(1) 1049/    1301 : 06 12                       LD      B,BSN0
+(1) 1049/    1303 : 10 FE                       DJNZ    $
+(1) 1050/    1305 : CD 2D 13            	CALL 	WS
+(1) 1051/    1308 : (MACRO)             	WAIT 	BSN1
+(1) 1051/    1308 : 06 0F                       LD      B,BSN1
+(1) 1051/    130A : 10 FE                       DJNZ    $
+(1) 1052/    130C : 0E 10               	LD 	C,16
+(1) 1053/    130E : 5E                  BSM1	LD 	E,(HL)
+(1) 1054/    130F : 23                  	INC 	HL
+(1) 1055/    1310 : 56                  	LD 	D,(HL)
+(1) 1056/    1311 : DD 19               	ADD 	IX,DE
+(1) 1057/    1313 : 23                  	INC 	HL
+(1) 1058/    1314 : C5                  	PUSH 	BC
+(1) 1059/    1315 : CD 2D 13             	CALL 	WS
+(1) 1060/    1318 : C1                  	POP 	BC
+(1) 1061/    1319 : 0D                  	DEC 	C
+(1) 1062/    131A : 28 06               	JR	Z,BSM2
+(1) 1063/    131C : (MACRO)             	WAIT 	BSN2
+(1) 1063/    131C : 06 0E                       LD      B,BSN2
+(1) 1063/    131E : 10 FE                       DJNZ    $
+(1) 1064/    1320 : 18 EC               	JR 	BSM1
+(1) 1065/    1322 : =12H                BSN0 	EQU (NTA/2-148)/13
+(1) 1066/    1322 : =FH                 BSN1 	EQU (NTA/2-178)/13
+(1) 1067/    1322 : =EH                 BSN2 	EQU (NTA/2-202)/13
+(1) 1068/    1322 : =10H                BSN3 	EQU (NTA/2-170)/13
+(1) 1069/    1322 : =35H                BSN5 	EQU (NTA-79)/13
+(1) 1070/    1322 : DD E5               BSM2 	PUSH 	IX
+(1) 1071/    1324 : D1                  	POP 	DE
+(1) 1072/    1325 : (MACRO)             	WAIT 	BSN3
+(1) 1072/    1325 : 06 10                       LD      B,BSN3
+(1) 1072/    1327 : 10 FE                       DJNZ    $
+(1) 1073/    1329 : CD 2D 13            	CALL 	WS
+(1) 1074/    132C : C9                  	RET
+(1) 1075/    132D :                     ;*************************************************************************
+(1) 1076/    132D :                     ;
+(1) 1077/    132D :                     ; AUSGABE EINES WORTES
+(1) 1078/    132D :                     ; ENTRY: 97 TAKTE, EXIT: 25 TAKTE
+(1) 1079/    132D :                     :
+(1) 1080/    132D : 0E 10               WS	LD 	C,16
+(1) 1081/    132F : CB 3A               WSM0	SRL 	D
+(1) 1082/    1331 : CB 1B               	RR	E
+(1) 1083/    1333 : 30 07               	JR	NC,WSM1
+(1) 1084/    1335 : (MACRO)             	WAIT	WSN1
+(1) 1084/    1335 : 06 03                       LD      B,WSN1
+(1) 1084/    1337 : 10 FE                       DJNZ    $
+(1) 1085/    1339 : 00                  	NOP
+(1) 1086/    133A : 18 03               	JR	WSM3
+(1) 1087/    133C : CD D4 12            WSM1 	CALL 	FLOUT
+(1) 1088/    133F : (MACRO)             WSM3 	WAIT 	WSN2
+(1) 1088/    133F : 06 19                       LD      B,WSN2
+(1) 1088/    1341 : 10 FE                       DJNZ    $
+(1) 1089/    1343 : CD D4 12            WSM2 	CALL 	FLOUT
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 28 - 4/24/2012 15:50:25
+
+
+(1) 1090/    1346 : 0D                  	DEC 	C
+(1) 1091/    1347 : C8                  	RET	Z
+(1) 1092/    1348 : (MACRO)             	WAIT 	WSN3
+(1) 1092/    1348 : 06 15                       LD      B,WSN3
+(1) 1092/    134A : 10 FE                       DJNZ    $
+(1) 1093/    134C : 18 E1               	JR 	WSM0
+(1) 1094/    134E :                     ;*************************************************************************
+(1) 1095/    134E :                     ;
+(1) 1096/    134E :                     ; ZEITKONSTANTEN FUER WS
+(1) 1097/    134E :                     ;
+(1) 1098/    134E : =3H                 WSN1	EQU	3
+(1) 1099/    134E : =19H                WSN2 	EQU 	(NTA/2-50)/13
+(1) 1100/    134E : =15H                WSN3 	EQU 	(NTA/2-99)/13
+(1) 1101/    134E : =4H                 MASK 	EQU 	04H
+(1) 1102/    134E :                     ;*E
+(1) 1103/    134E :                     ;*************************************************************************
+(1) 1104/    134E :                     ;
+(1) 1105/    134E :                     ; UEBERGANG ZUR EINGABE DER QUELLADRESSE NACH ERFOLGTER EINGABE DER
+(1) 1106/    134E :                     ; ZIELADRESSE BEIM MOVE-KOMMANDO
+(1) 1107/    134E :                     ;
+(1) 1108/    134E : 11 17 76            Z35E 	LD 	DE, ANZMSO
+(1) 1109/    1351 : C3 81 11            	JP 	Z18EM1
+(1) 1110/    1354 :                     ;*************************************************************************
+(1) 1111/    1354 :                     ;
+(1) 1112/    1354 :                     ; UEBERGANG ZUR EINGABE DER LAENGE NACH ERFOLGTER EINGABE DER QUELLADRESSE
+(1) 1113/    1354 :                     ; BEIM MOVE-KOMMANDO
+(1) 1114/    1354 :                     ;
+(1) 1115/    1354 : 11 73 43            Z37E 	LD 	DE,ANZMLE
+(1) 1116/    1357 : 2A E8 43            Z37EM1 	LD 	HL,(HR1)
+(1) 1117/    135A : 22 EE 43            	LD 	(HR4),HL 	; SOURCE
+(1) 1118/    135D : C3 87 11            	JP 	Z18EM2
+(1) 1119/    1360 :                     ;*************************************************************************
+(1) 1120/    1360 :                     ;
+(1) 1121/    1360 :                     ; UEBERGANG ZUR AUSFUEHRUNG DES MOVE-KOMMANDOS
+(1) 1122/    1360 :                     ;
+(1) 1123/    1360 : ED 5B EA 43         Z39E	LD 	DE,(HR2) 	; ZIEL
+(1) 1124/    1364 : 2A EE 43            	LD 	HL,(HR4)
+(1) 1125/    1367 : ED 4B E8 43         	LD 	BC,(HR1) 	; LAENGE
+(1) 1126/    136B : E5                  	PUSH 	HL
+(1) 1127/    136C : (MACRO)             	SBWC
+(1) 1127/    136C : A7                          AND     A
+(1) 1127/    136D : ED 52                       SBC     HL,DE
+(1) 1128/    136F : E1                  	POP 	HL
+(1) 1129/    1370 : 38 04               	JR	C,Z39EM1
+(1) 1130/    1372 : ED B0               	LDIR
+(1) 1131/    1374 : 18 08               	JR 	Z39EM2
+(1) 1132/    1376 : 09                  Z39EM1 	ADD 	HL,BC
+(1) 1133/    1377 : 2B                  	DEC 	HL
+(1) 1134/    1378 : EB                  	EX 	DE,HL
+(1) 1135/    1379 : 09                  	ADD 	HL,BC
+(1) 1136/    137A : 2B                  	DEC 	HL
+(1) 1137/    137B : EB                  	EX 	DE,HL
+(1) 1138/    137C : ED B8               	LDDR
+(1) 1139/    137E : 11 00 71            Z39EM2 	LD 	DE,ANZFIN
+(1) 1140/    1381 : CD AC 02            	CALL 	KOMDAR
+(1) 1141/    1384 : FD 36 08 00         	LD 	(IY+PROZ),Z1
+(1) 1142/    1388 : C9                  	RET
+(1) 1143/    1389 :                     ;*E
+(1) 1144/    1389 :                     ;*************************************************************************
+(1) 1145/    1389 :                     ;
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 29 - 4/24/2012 15:50:25
+
+
+(1) 1146/    1389 :                     ; UEBERGANG ZUR EINGABE DER LAENGE DES ZU FUELLENDEN SPEICHERBEREICHS
+(1) 1147/    1389 :                     ;
+(1) 1148/    1389 : 11 73 43            Z41E 	LD 	DE,ANZFIL
+(1) 1149/    138C : C3 81 11            	JP 	Z18EM1
+(1) 1150/    138F :                     ;*************************************************************************
+(1) 1151/    138F :                     ;
+(1) 1152/    138F :                     ; UEBERGANG ZUR EINGABE DER EINZUSCHREIBENDEN DATEN
+(1) 1153/    138F :                     ;
+(1) 1154/    138F : 11 F5 97            Z43E 	LD 	DE,ANZFID
+(1) 1155/    1392 : 18 C3               	JR 	Z37EM1 		; LAENGE IN HR4
+(1) 1156/    1394 :                     ;*************************************************************************
+(1) 1157/    1394 :                     ;
+(1) 1158/    1394 :                     ; EINGABE DER ERSTEN ZIFFER DER BEIM KOMMANDO 'FILL' EINZUSCHREIBENDEN
+(1) 1159/    1394 :                     ; DATEN
+(1) 1160/    1394 :                     ;
+(1) 1161/    1394 : FD 34 08            Z44Z 	INC 	(IY+PROZ)
+(1) 1162/    1397 : 21 00 00            	LD 	HL,00H
+(1) 1163/    139A : 22 E8 43            	LD 	(HR1),HL
+(1) 1164/    139D : C3 B5 03            	JP 	Z4Z
+(1) 1165/    13A0 :                     ;*************************************************************************
+(1) 1166/    13A0 :                     ;
+(1) 1167/    13A0 :                     ; AUSFUEHRUNG DER FUELLOPERATION
+(1) 1168/    13A0 :                     ;
+(1) 1169/    13A0 : ED 4B EE 43         Z45E	LD	BC,(HR4) 	; LAENGE
+(1) 1170/    13A4 : 2A EA 43            	LD 	HL,(HR2)
+(1) 1171/    13A7 : ED 5B EA 43         	LD 	DE,(HR2) 	; ZIEL
+(1) 1172/    13AB : 21 E8 43            	LD 	HL,HR1 		; DATENZEIGER
+(1) 1173/    13AE : ED A0               Z45EM1 	LDI
+(1) 1174/    13B0 : 2B                  	DEC 	HL
+(1) 1175/    13B1 : EA AE 13            	JP	PE,Z45EM1
+(1) 1176/    13B4 : 18 C8               	JR 	Z39EM2
+(1) 1177/    13B6 :                     ;*E
+(1) 1178/    13B6 :                     ;*************************************************************************
+(1) 1179/    13B6 :                     ;
+(1) 1180/    13B6 :                     ; EINGABE EINER ZIFFER FUER EINE PORTADRESSE
+(1) 1181/    13B6 :                     ;
+(1) 1182/    13B6 : CD CE 02            Z47Z	CALL 	DASCH 		; PORT IN
+(1) 1183/    13B9 : CD D9 02            	CALL 	ADRANZ
+(1) 1184/    13BC : FD 36 03 00         	LD 	(IY+3),00H
+(1) 1185/    13C0 : C9                  	RET
+(1) 1186/    13C1 :                     ;*************************************************************************
+(1) 1187/    13C1 :                     ;
+(1) 1188/    13C1 :                     ; UEBERGANG ZUM PORTLESEN
+(1) 1189/    13C1 :                     ;
+(1) 1190/    13C1 : FD 34 08            Z47E 	INC 	(IY+PROZ)
+(1) 1191/    13C4 :                     ;*************************************************************************
+(1) 1192/    13C4 :                     ;
+(1) 1193/    13C4 :                     ; PORTLESEN AUSFUEHREN
+(1) 1194/    13C4 :                     ;
+(1) 1195/    13C4 : FD 4E 0C            Z48E 	LD 	C,(IY+H1)
+(1) 1196/    13C7 : ED 60               	IN 	H,(C)
+(1) 1197/    13C9 : CD 38 03            	CALL 	DAAUS
+(1) 1198/    13CC : FD CB 07 9E         	RES 	BIA,(IY+7)
+(1) 1199/    13D0 : C9                  	RET
+(1) 1200/    13D1 :                     ;*************************************************************************
+(1) 1201/    13D1 :                     ;
+(1) 1202/    13D1 :                     ; UEBERGANG ZUR EINGABE VON ZU EINEM PORT AUSZUGEBENDEN DATEN
+(1) 1203/    13D1 :                     ;
+(1) 1204/    13D1 : FD 34 08            Z50E 	INC 	(IY+PROZ)
+(1) 1205/    13D4 : FD 7E 0C            	LD 	A,(IY+H1)
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(AKTIONEN.ASM) - page 30 - 4/24/2012 15:50:25
+
+
+(1) 1206/    13D7 : FD 77 0E            	LD 	(IY+H2),A
+(1) 1207/    13DA : FD CB 05 9E         	RES 	BIA,(IY+5)
+(1) 1208/    13DE : FD CB 07 DE         Z50EM1 	SET 	BIA,(IY+7)
+(1) 1209/    13E2 : C9                  	RET
+(1) 1210/    13E3 :                     ;*************************************************************************
+(1) 1211/    13E3 :                     ;
+(1) 1212/    13E3 :                     ; AUSFUEHRUNG DER AUSGABE VON DATEN ZU EINEM PORT
+(1) 1213/    13E3 :                     ;
+(1) 1214/    13E3 : FD 4E 0E            Z52E 	LD 	C,(IY+H2)
+(1) 1215/    13E6 : FD 7E 0C            	LD 	A,(IY+H1)
+(1) 1216/    13E9 : ED 79               	OUT 	(C),A
+(1) 1217/    13EB : FD 35 08            	DEC 	(IY+PROZ)
+(1) 1218/    13EE : 21 00 00            	LD 	HL,00H
+(1) 1219/    13F1 : 22 E8 43            	LD 	(HR1),HL
+(1) 1220/    13F4 : 22 E2 43            	LD 	(ANZB6),HL
+(1) 1221/    13F7 : 18 E5               	JR 	Z50EM1
+(1) 1222/    13F9 :                     ;*E
+(1) 1223/    13F9 :                     ;*************************************************************************
+(1) 1224/    13F9 :                     ;
+(1) 1225/    13F9 :                     ; KODES FUER DIE ANZEIGE VON ZUSTAENDEN IN SIEBENSEGMENTDARSTELLUNG
+(1) 1226/    13F9 :                     ;
+(1) 1227/    13F9 :                     ;*************************************************************************
+(1) 1228/    13F9 :                     ;ANUSBR 	EQU 	0C757H
+(1) 1229/    13F9 : =5741H              ANZBRE 	EQU 	5741H
+(1) 1230/    13F9 : =1000H              FSTAEND EQU 	1000H
+(1) 1231/    13F9 : =7311H              ANZLFE 	EQU 	7311H
+(1) 1232/    13F9 : =7100H              ANZFIN 	EQU 	7100H
+(1) 1233/    13F9 : =73F5H              ANZMSE 	EQU 	73F5H
+(1) 1234/    13F9 : =73F5H              ANZFSA 	EQU 	73F5H
+(1) 1235/    13F9 : =7617H              ANZMSO 	EQU 	7617H
+(1) 1236/    13F9 : =4373H              ANZMLE 	EQU 	4373H
+(1) 1237/    13F9 : =4373H              ANZFIL 	EQU 	4373H
+(1) 1238/    13F9 : =97F5H              ANZFID 	EQU 	97F5H
+(1) 1239/    13F9 :                     ;*INCLUDE LERNSYSTEMEQU.S
+(1) 1240/    13F9 :                     
+      18/    13F9 :                     	INCLUDE RAM.ASM
+(1)    1/    13F9 :                     ;*************************************************************************
+(1)    2/    13F9 :                     ;
+(1)    3/    13F9 :                     ;	L.S.RAM
+(1)    4/    13F9 :                     ;
+(1)    5/    13F9 :                     ;*************************************************************************
+(1)    6/    13F9 :                     ;
+(1)    7/    13F9 :                     ; FUNKTION: ORGANISIERT DEN RAMBEREICH DES MONITORS
+(1)    8/    13F9 :                     ;
+(1)    9/    13F9 :                     ;
+(1)   10/    4000 :                     	ORG 	4000H
+(1)   11/    4000 :                     ;	GLOBAL RAMANF RAMEND USERSP SYSTSP
+(1)   12/    4000 :                     ;	GLOBAL ANZBER TASTBI PROGZU NMIZUS
+(1)   13/    4000 :                     ;	GLOBAL BREAKP HR1 HR2 HR3 FSTACK
+(1)   14/    4000 :                     ;	GLOBAL SYSP24 SYSP26 USSP2
+(1)   15/    4000 :                     ;	GLOBAL SYSP1 ANZB4 ANZB6 ANZB2
+(1)   16/    4000 :                     ;	GLOBAL HR4 HR5
+(1)   17/    4000 :                     
+(1)   18/    4000 :                     RAMANF 				; ANFANG DES RAMBEREICHES
+(1)   19/    43A0 :                     	ORG 	$+3A0H 		; RESERVIERUNG VON SPEICHERPLATZ FUER ANWENDER
+(1)   20/    43A0 :                     USERSP 				; ANWENDERSTACK
+(1)   21/    43D4 :                     	ORG 	$+52 		; RESERVIERUNG FUER SYSTEMSTACK
+(1)   22/    43D4 :                     SYSTSP 				; SYSTEMSTACK
+(1)   23/    43D4 :                     TASTBI 	DS 	8 		; ABBILD DER TASTATUR <2 BIT PRO TASTE>
+(1)   24/    43DC :                     ANZBER 	DS 	8 		; AKTUELLE WERTE FUER AUFFRISCHEN DER ANZEIGE
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(RAM.ASM) - page 31 - 4/24/2012 15:50:25
+
+
+(1)   25/    43E4 :                     PROGZU 	DS 	1 		; ZUSTAND DES PROGRAMMS
+(1)   26/    43E5 :                     NMIZUS 	DS 	1 		; ZUSTAND BEI EINTRITT IN MONITOR
+(1)   27/    43E6 :                     BREAKP 	DS 	2 		; MERKZELLE FUER BREAKPOINTADRESSE
+(1)   28/    43E8 :                     HR1 	DS 	2 		; HILFSREGISTER 1 BIS 4
+(1)   29/    43EA :                     HR2 	DS 	2
+(1)   30/    43EC :                     HR3 	DS 	2
+(1)   31/    43EE :                     HR4 	DS 	1
+(1)   32/    43EF :                     HR5 	DS 	1
+(1)   33/    43F0 :                     FSTACK 	DS 	16 		; FEHLERSTAPEL FUER MAGNETBANDLESEFEHLER
+(1)   34/    4400 : =4400H              RAMEND 	EQU 	RAMANF+400H
+(1)   35/    4400 : =43BCH              SYSP24 	EQU 	SYSTSP-24
+(1)   36/    4400 : =43BAH              SYSP26 	EQU 	SYSTSP-26
+(1)   37/    4400 : =43D3H              SYSP1 	EQU 	SYSTSP-1
+(1)   38/    4400 : =43DEH              ANZB2 	EQU 	ANZBER+2
+(1)   39/    4400 : =43E0H              ANZB4 	EQU 	ANZBER+4
+(1)   40/    4400 : =43E2H              ANZB6 	EQU 	ANZBER+6
+(1)   41/    4400 : =43A2H              USSP2 	EQU 	USERSP+2
+(1)   42/    4400 :                     ;*INCLUDE LERNSYSTEMEQU.S
+(1)   43/    4400 :                     ;	END
+      19/    4400 :                     	INCLUDE LERNSYSTEMEQU.ASM
+(1)    1/    4400 :                     ;*************************************************************************
+(1)    2/    4400 :                     ;
+(1)    3/    4400 :                     ; REFERENZEN FUER I/O-ADRESSEN, VARIABLENADRESSEN, KODIERUNGEN
+(1)    4/    4400 :                     ;
+(1)    5/    4400 :                     ;*************************************************************************
+(1)    6/    4400 : =80H                PIOD1  	EQU  	080H  		; PIO DATENDRESSE SEGMENTE ANZEIGE
+(1)    7/    4400 : =81H                PIOC1  	EQU  	PIOD1+1  	; PIO STEUERADRESSE SEGMENTE ANZEIGE
+(1)    8/    4400 : =82H                PIOD2  	EQU  	082H  		; PIO DATENADRESSE SYSTEMTEIL
+(1)    9/    4400 : =83H                PIOC2  	EQU  	PIOD2+1  	; PIO STEUERADRESSE SYSTEMTEIL
+(1)   10/    4400 : =88H                CTC  	EQU  	088H 		; CTC ADRESSE SYSTEMKANAL
+(1)   11/    4400 : =FCH                PIODIG  EQU  	0FCH  		; ADRESSE TREIBER DIGITS
+(1)   12/    4400 : =8H                 PROZ  	EQU  	8  		; RELATIVE ADRESSE FUER PROGZU
+(1)   13/    4400 : =9H                 NMIZ  	EQU  	9  		; RELATIVE ADRESSE FUER NMIZUS
+(1)   14/    4400 : =AH                 BREAK  	EQU  	10  		; RELATIVE ADRESSE FUER BREAKP
+(1)   15/    4400 : =CH                 H1  	EQU  	12  		; RELATIVE ADRESSE FUER HR1
+(1)   16/    4400 : =EH                 H2  	EQU  	14  		; RELATIVE ADRESSE FUER HR2
+(1)   17/    4400 : =10H                H3  	EQU  	16  		; RELATIVE ADRESSE FUER HR3
+(1)   18/    4400 : =12H                H4  	EQU  	18  		; RELATIVE ADRESSE FUER HR4
+(1)   19/    4400 : =13H                H5  	EQU  	19  		; RELATIVE ADRESSE FUER HR5
+(1)   20/    4400 : =0H                 Z1  	EQU  	0  		; KODES FUER DIE MONITORZUSTAENDE
+(1)   21/    4400 : =1H                 Z2  	EQU  	1+Z1
+(1)   22/    4400 : =2H                 Z3  	EQU  	1+Z2
+(1)   23/    4400 : =3H                 Z4A  	EQU  	1+Z3
+(1)   24/    4400 : =4H                 Z4  	EQU  	1+Z4A
+(1)   25/    4400 : =5H                 Z4C  	EQU  	1+Z4
+(1)   26/    4400 : =6H                 Z5  	EQU  	1+Z4C
+(1)   27/    4400 : =7H                 Z6  	EQU  	1+Z5
+(1)   28/    4400 : =8H                 Z7  	EQU  	1+Z6
+(1)   29/    4400 : =9H                 Z8  	EQU  	1+Z7
+(1)   30/    4400 : =AH                 Z9  	EQU  	1+Z8
+(1)   31/    4400 : =BH                 Z10  	EQU  	1+Z9
+(1)   32/    4400 : =CH                 Z12  	EQU  	1+Z10
+(1)   33/    4400 : =DH                 Z13  	EQU  	1+Z12
+(1)   34/    4400 : =EH                 Z14  	EQU  	1+Z13
+(1)   35/    4400 : =FH                 Z16  	EQU  	1+Z14
+(1)   36/    4400 : =10H                Z17  	EQU  	1+Z16
+(1)   37/    4400 : =11H                Z18  	EQU  	1+Z17
+(1)   38/    4400 : =12H                Z19  	EQU  	1+Z18
+(1)   39/    4400 : =13H                Z20  	EQU  	1+Z19
+(1)   40/    4400 : =14H                Z21A  	EQU  	1+Z20
+ AS V1.42 Beta [Bld 82] - source file monitor.asm(LERNSYSTEMEQU.ASM) - page 32 - 4/24/2012 15:50:25
+
+
+(1)   41/    4400 : =15H                Z21  	EQU  	1+Z21A
+(1)   42/    4400 : =16H                Z22  	EQU  	1+Z21
+(1)   43/    4400 : =17H                Z23  	EQU  	1+Z22
+(1)   44/    4400 : =18H                Z24  	EQU  	1+Z23
+(1)   45/    4400 : =19H                Z25  	EQU  	1+Z24
+(1)   46/    4400 : =1AH                Z25A  	EQU  	1+Z25
+(1)   47/    4400 : =1BH                Z34  	EQU  	1+Z25A
+(1)   48/    4400 : =1CH                Z35  	EQU  	1+Z34
+(1)   49/    4400 : =1DH                Z36  	EQU  	1+Z35
+(1)   50/    4400 : =1EH                Z37  	EQU  	1+Z36
+(1)   51/    4400 : =1FH                Z38  	EQU  	1+Z37
+(1)   52/    4400 : =20H                Z39  	EQU  	1+Z38
+(1)   53/    4400 : =21H                Z40  	EQU  	1+Z39
+(1)   54/    4400 : =22H                Z41  	EQU  	1+Z40
+(1)   55/    4400 : =23H                Z42  	EQU  	1+Z41
+(1)   56/    4400 : =24H                Z43  	EQU  	1+Z42
+(1)   57/    4400 : =25H                Z44  	EQU  	1+Z43
+(1)   58/    4400 : =26H                Z45  	EQU  	1+Z44
+(1)   59/    4400 : =27H                Z46  	EQU  	1+Z45
+(1)   60/    4400 : =28H                Z47  	EQU  	1+Z46
+(1)   61/    4400 : =29H                Z48  	EQU  	1+Z47
+(1)   62/    4400 : =2AH                Z49  	EQU  	1+Z48
+(1)   63/    4400 : =2BH                Z50  	EQU  	1+Z49
+(1)   64/    4400 : =2CH                Z51  	EQU  	1+Z50
+(1)   65/    4400 : =2DH                Z52  	EQU  	1+Z51
+(1)   66/    4400 : =2EH                Z53  	EQU  	1+Z52
+(1)   67/    4400 : =2FH                Z54  	EQU  	1+Z53
+(1)   68/    4400 : =3H                 BIA  	EQU  	3  		; DEZIMALPUNKT-BIT DER ANZEIGE
+(1)   69/    4400 : =0H                 BIB  	EQU  	0  		; PIO-BIT FUER FERNSCHREIBERANSCHLUSS
+(1)   70/    4400 : =2H                 BIC  	EQU  	2  		; PIO-BIT FUER AUSGABE AUF MAGNETBAND
+(1)   71/    4400 : =1H                 BID  	EQU  	1  		; PIO-BIT FUER EINGABE VOM MAGNETBAND
+(1)   72/    4400 : =6H                 BIE  	EQU  	6  		; PIO-BIT ZUR STEUERUNG VON SCON
+(1)   73/    4400 :                     
+      20/    4400 :                     
+      21/    4400 :                     ; Achtung: Es fehlen noch die Prüfsummen
+      22/    4400 :                     ;03FC: 4A 5C FE 21
+      23/    4400 :                     ;13FC: 72 36 FE 22
+      24/    4400 :                     ;s.a. ROM_TEST.asm
+      25/    4400 :                     
+      26/    4400 :                     	END
+ AS V1.42 Beta [Bld 82] - source file monitor.asm - page 33 - 4/24/2012 15:50:25
+
+
+  symbol table (* = unused):
+  ------------------------
+
+ ADRAN1 :                       2DD C |  ADRANZ :                       2D9 C |
+ ADRAU1 :                       32F C |  ADRAUS :                       32D C |
+ ANBREA :                      5711 - |  ANMON :                       E557 - |
+ ANUSBR :                      C757 - |  ANZB2 :                       43DE - |
+ ANZB4 :                       43E0 - |  ANZB6 :                       43E2 - |
+ ANZBER :                      43DC C |  ANZBRE :                      5741 - |
+ ANZDEC :                       310 C |  ANZFID :                      97F5 - |
+ ANZFIL :                      4373 - |  ANZFIN :                      7100 - |
+*ANZFSA :                      73F5 - |  ANZKNA :                       1D8 C |
+ ANZLFE :                      7311 - |  ANZMLE :                      4373 - |
+ ANZMSE :                      73F5 - |  ANZMSO :                      7617 - |
+ ANZRNA :                       38A C | *ARCHITECTURE :  i386-unknown-win32 - |
+ BIA :                            3 - | *BIB :                            0 - |
+*BIC :                            2 - |  BID :                            1 - |
+ BIE :                            6 - | *BIGENDIAN :                      0 - |
+ BITIN :                       1211 C |  BL :                          121B C |
+ BLM1 :                        1223 C |  BLM2 :                        1239 C |
+ BLM4 :                        1245 C |  BLM5 :                        1267 C |
+ BLM6 :                        127F C |  BLM7 :                        1285 C |
+ BLM8 :                        1290 C |  BLMX :                        122E C |
+ BLN1 :                           7 - |  BLN10 :                         1A - |
+ BLN11 :                          9 - |  BLN3 :                          44 - |
+ BLN4 :                          1E - |  BLN5 :                           1 - |
+ BLN6 :                          12 - |  BLN7 :                          12 - |
+ BLN9 :                          10 - | *BRANCHEXT :                      0 - |
+*BREAK :                          A - |  BREAKP :                      43E6 C |
+ BREST :                         C1 C |  BRSYST :                        92 C |
+ BRUSER :                        A1 C |  BRUSM1 :                        A7 C |
+ BS :                          12E0 C |  BSA :                         12DB C |
+ BSM0 :                        12F1 C |  BSM1 :                        130E C |
+ BSM2 :                        1322 C |  BSN0 :                          12 - |
+ BSN1 :                           F - |  BSN2 :                           E - |
+ BSN3 :                          10 - |  BSN5 :                          35 - |
+ BSX :                         12E3 C | *CASESENSITIVE :                  0 - |
+*CONSTPI :        3.141592653589793 - |  CTC :                           88 - |
+ DAANZ :                        2E2 C |  DAANZ1 :                       2E9 C |
+ DAANZ2 :                       2EF C |  DAANZ3 :                       2E6 C |
+ DAAUS :                        338 C |  DAAUS1 :                       33A C |
+ DASCH :                        2CE C | *DATE :                   4/24/2012 - |
+ DL :                          11D5 C |  DLM0 :                        11DC C |
+ DLM1 :                        11FE C |  DS :                          12C0 C |
+ DS1 :                         12C6 C | *FALSE :                          0 - |
+ FIFLA :                       1209 C |  FLOUT :                       12D4 C |
+ FSTACK :                      43F0 C | *FSTAEND :                     1000 - |
+*FULLPMMU :                       1 - | *FUNKAN :                       2AF C |
+ GREPOI :                       367 C |  H1 :                             C - |
+ H2 :                             E - | *H3 :                            10 - |
+*H4 :                            12 - | *H5 :                            13 - |
+*HAS64 :                          1 - | *HASDSP :                         0 - |
+*HASFPU :                         0 - | *HASPMMU :                        0 - |
+ HDAANZ :                       304 C |  HR1 :                         43E8 C |
+ HR2 :                         43EA C |  HR3 :                         43EC C |
+ HR4 :                         43EE C | *HR5 :                         43EF C |
+*INEXTMODE :                      0 - | *INLWORDMODE :                    0 - |
+*INMAXMODE :                      0 - | *INSRCMODE :                      0 - |
+*INSUPMODE :                      0 - |  IOBITS :                        BB - |
+ IWERTE :                        D5 C |  JPTRST :                        BE C |
+ AS V1.42 Beta [Bld 82] - source file monitor.asm - page 34 - 4/24/2012 15:50:25
+
+
+ KODENT :                        40 - |  KODVR :                         50 - |
+ KOMDA1 :                       2B4 C |  KOMDAR :                       2AC C |
+*KONSOL :                       14E C | *KONTAS :                       151 C |
+ KZUADR :                       1CA C |  LDAANZ :                       30A C |
+ LDAAU1 :                       345 C |  LDAAUS :                       343 C |
+*LDMA :                         2D1 C | *LISTON :                         1 - |
+ LSROM2 :                      1000 C | *MACEXP :                         1 - |
+ MASK :                           4 - |  MBREADY :                      2BA C |
+ MBRTEX :                       2C6 C | *MOMCPU :                        80 - |
+*MOMCPUNAME :                   Z80 - | *MONINT :                        8D C |
+ MONRM1 :                        1B C |  NAMES :                        3F3 C |
+*NESTMAX :                      100 - |  NMIM1 :                         3B C |
+ NMIM2 :                         56 C |  NMIM3 :                         68 C |
+ NMIZ :                           9 - |  NMIZUS :                      43E5 C |
+ NORST :                         AA C |  NTA :                          300 - |
+*NX :                           3E5 C |  NX1 :                          3EE C |
+*PACKING :                        0 - | *PADDING :                        1 - |
+ PIOC1 :                         81 - |  PIOC2 :                         83 - |
+ PIOD1 :                         80 - |  PIOD2 :                         82 - |
+ PIODIG :                        FC - |  PROGZU :                      43E4 C |
+ PROZ :                           8 - |  PZAHL :                          C - |
+ RAMANF :                      4000 C |  RAMEND :                      4400 - |
+*RDYANZ :                       2BD C | *RELAXED :                        0 - |
+ RETURN :                       3A4 C |  RINANZ :                       34E C |
+ RISTA :                        35C C |  RNANZ :                        375 C |
+ SHIHL1 :                       324 C |  SHIHLA :                       320 C |
+ SPPCKO :                        C6 C |  SYSP1 :                       43D3 - |
+ SYSP24 :                      43BC - |  SYSP26 :                      43BA - |
+ SYSTSP :                      43D4 C |  TAST :                          E4 C |
+*TAST10 :                       155 C |  TAST11 :                       157 C |
+ TAST30 :                       1AF C |  TAST32 :                       1B7 C |
+*TAST33 :                       1C0 C |  TASTA :                        109 C |
+ TASTB :                        126 C |  TASTB1 :                       12B C |
+ TASTBI :                      43D4 C |  TASTC :                         F6 C |
+ TASTD :                        120 C |  TASTU :                        14B C |
+*TASTX :                        158 C |  TASTX1 :                       166 C |
+ TASTX2 :                       18F C | *TASTX3 :                       173 C |
+ TASTX4 :                       175 C |  TASTX5 :                       199 C |
+ TASTX6 :                       18B C |  TASTX7 :                       17F C |
+ TASTZ :                        146 C | *TIME :                    15:50:25 - |
+ TRANS :                        2C0 C | *TRUE :                           1 - |
+ USERSP :                      43A0 C |  USSP2 :                       43A2 - |
+*VERSION :                     142F - |  WL :                          12A1 C |
+ WLM0 :                        12A4 C |  WLM1 :                        12AC C |
+ WLM2 :                        12AD C |  WLM3 :                        12BE C |
+ WLN1 :                          1E - |  WS :                          132D C |
+ WSM0 :                        132F C |  WSM1 :                        133C C |
+*WSM2 :                        1343 C |  WSM3 :                        133F C |
+ WSN1 :                           3 - |  WSN2 :                          19 - |
+ WSN3 :                          15 - |  Z1 :                             0 - |
+ Z10 :                            B - |  Z10E :                        10E7 C |
+ Z10EM1 :                      10FC C |  Z10EM2 :                      111B C |
+ Z10EM3 :                      111F C |  Z10EM4 :                      114B C |
+ Z12 :                            C - |  Z12E :                        1139 C |
+ Z13 :                            D - |  Z13E :                        1133 C |
+ Z14 :                            E - |  Z14E :                        113D C |
+ Z16 :                            F - |  Z16Z :                        1157 C |
+ Z16ZM1 :                      1162 C |  Z16ZM2 :                      116C C |
+ Z16ZM3 :                      1170 C |  Z17 :                           10 - |
+ Z18 :                           11 - |  Z18E :                        117E C |
+ AS V1.42 Beta [Bld 82] - source file monitor.asm - page 35 - 4/24/2012 15:50:25
+
+
+ Z18EM1 :                      1181 C |  Z18EM2 :                      1187 C |
+ Z19 :                           12 - |  Z2 :                             1 - |
+ Z20 :                           13 - |  Z20E :                        118E C |
+ Z21 :                           15 - |  Z21A :                          14 - |
+ Z21AE :                       1195 C |  Z21E :                        11B0 C |
+ Z22 :                           16 - |  Z23 :                           17 - |
+ Z24 :                           18 - |  Z25 :                           19 - |
+ Z25A :                          1A - |  Z25AE :                       11CB C |
+ Z2E :                          3D3 C |  Z2EM1 :                        3D7 C |
+ Z2Z :                          3A5 C |  Z3 :                             2 - |
+ Z34 :                           1B - |  Z35 :                           1C - |
+ Z35E :                        134E C |  Z36 :                           1D - |
+ Z37 :                           1E - |  Z37E :                        1354 C |
+ Z37EM1 :                      1357 C |  Z38 :                           1F - |
+ Z39 :                           20 - |  Z39E :                        1360 C |
+ Z39EM1 :                      1376 C |  Z39EM2 :                      137E C |
+ Z3E :                          3DA C |  Z3EM1 :                       1000 C |
+ Z3Z :                          3A9 C |  Z3ZM1 :                        3AE C |
+ Z4 :                             4 - |  Z40 :                           21 - |
+ Z41 :                           22 - |  Z41E :                        1389 C |
+ Z42 :                           23 - |  Z43 :                           24 - |
+ Z43E :                        138F C |  Z44 :                           25 - |
+ Z44Z :                        1394 C |  Z45 :                           26 - |
+ Z45E :                        13A0 C |  Z45EM1 :                      13AE C |
+ Z46 :                           27 - |  Z47 :                           28 - |
+ Z47E :                        13C1 C |  Z47Z :                        13B6 C |
+ Z48 :                           29 - |  Z48E :                        13C4 C |
+ Z49 :                           2A - |  Z4A :                            3 - |
+ Z4AE :                        1010 C |  Z4AEM1 :                      1021 C |
+ Z4AEM2 :                      1034 C |  Z4AEM3 :                      1019 C |
+ Z4AEM4 :                      1038 C |  Z4AEM5 :                      102F C |
+ Z4AZ :                         3C0 C |  Z4C :                            5 - |
+ Z4CE :                        1058 C |  Z4CEM1 :                      106F C |
+ Z4CZ :                         3CC C |  Z4E :                         1043 C |
+ Z4EM1 :                       1052 C |  Z4Z :                          3B5 C |
+ Z5 :                             6 - |  Z50 :                           2B - |
+ Z50E :                        13D1 C |  Z50EM1 :                      13DE C |
+ Z51 :                           2C - |  Z52 :                           2D - |
+ Z52E :                        13E3 C |  Z53 :                           2E - |
+*Z54 :                           2F - |  Z5E :                         1080 C |
+ Z5EM1 :                       1083 C |  Z5Z :                         109B C |
+*Z5ZM1 :                       109E C |  Z6 :                             7 - |
+ Z6E :                         10AB C |  Z6Z :                         10A4 C |
+ Z7 :                             8 - |  Z7E :                         10B0 C |
+ Z7EM1 :                       10C0 C |  Z7EM2 :                       10C5 C |
+ Z8 :                             9 - |  Z8E :                         10C7 C |
+ Z8EM1 :                       10DA C |  Z9 :                             A - |
+ Z9E :                         10DF C |  ZEIT :                          28 - |
+*ZIFANZ :                       300 C |  ZITAB :                        1C2 C |
+ ZK2 :                           15 - |  ZUSTAB :                       1F4 C |
+
+    334 symbols
+     52 unused symbols
+
+ AS V1.42 Beta [Bld 82] - source file monitor.asm - page 36 - 4/24/2012 15:50:25
+
+
+  defined macros:
+  ---------------
+
+SBWC                                  | SWAIT                                
+WAIT                                  |
+
+      3 macros
+
+ AS V1.42 Beta [Bld 82] - source file monitor.asm - page 37 - 4/24/2012 15:50:25
+
+
+  codepages:
+  ----------
+
+STANDARD (0 changed characters)
+
+
+0.06 seconds assembly time
+
+   1845 lines source file
+   1901 lines incl. macro expansions
+      2 passes
+      0 errors
+      0 warnings

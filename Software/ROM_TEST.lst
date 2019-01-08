@@ -1,0 +1,113 @@
+ AS V1.42 Beta [Bld 82] - source file L_S_ROM_TEST.asm - page 1 - 4/10/2012 12:30:53
+
+
+       1/       0 :                     ; POLY-COMPUTER 880
+       2/       0 :                     ;
+       3/       0 :                     ; 11. Prüfprogramme für den POLY-COMPUTER
+       4/       0 :                     ; Bedienhandbuch, S. 67-79
+       5/       0 :                     ;
+       6/       0 :                     ; assemblieren mit Arnold-Assembler www.alfsembler.de
+       7/       0 :                     ; vp120210
+       8/       0 :                     ;
+       9/       0 :                     	cpu	z80
+      10/       0 :                     
+      11/       0 :                     ;*************************************************************************
+      12/       0 :                     ;
+      13/       0 :                     ; 	TEST EINES ROMS IM POLY-COMPUTER
+      14/       0 :                     ;
+      15/       0 :                     ;*************************************************************************
+      16/       0 :                     ;
+      17/       0 :                     ; 	STRATEGIE: JEDER VOM VEB KOMBINAT POLYTECHNIK UND PRAEZISSIONS-
+      18/       0 :                     ; 		   GERAETE FUER DEN POLY-COMPUTER BEZOGENE ROM ENTHAELT
+      19/       0 :                     ;		   AUF DEN ROMADRESSEN 3FCH, 3FDH UND 3FEH EINEN
+      20/       0 :                     ;		   PRUEFKODE. DIESER STELLT DIE NEGATION DER SUMME ALLER
+      21/       0 :                     ;		   BYTES DAR.
+      22/       0 :                     ;		   DER TEST VERGLEICHT DIESE ABGESPEICHERTE SUMME
+      23/       0 :                     ;		   MIT DER SELBST BERECHNETEN UND FUEHRT SCHLIESSLICH
+      24/       0 :                     ;		   EINE ENTSPRECHENDE AUSGABE AUF DIE ANZEIGE AUS.
+      25/       0 :                     ;		   DAS REGISTERPAAR HL MUSS BEIM AUFRUF DIE ANFANGS-
+      26/       0 :                     ; 		   ADRESSE DES ROM IM SPEICHER ENTHALTEN.
+      27/       0 :                     ;
+      28/       0 :                     ;*************************************************************************
+      29/    4000 :                     	ORG 	4000H
+      30/    4000 :                     ;	ld	hl,0
+      31/    4000 : 01 FC 03            	LD 	BC,03FCH
+      32/    4003 : 11 00 00            	LD 	DE,0000H 	; ANFANGSWERT DER SUMMIERUNG
+      33/    4006 : 3E 00               	LD 	A,00H 		; ANFANGSWERT DER SUMMIERUNG
+      34/    4008 : 04                  	INC 	B
+      35/    4009 : 86                  LSROM1 	ADD 	A,(HL)
+      36/    400A : 30 01               	JR	NC,LSROM2
+      37/    400C : 13                  	INC 	DE
+      38/    400D : 23                  LSROM2 	INC 	HL 		; LESEZEIGER ERHOEHEN
+      39/    400E : 0D                  	DEC 	C
+      40/    400F : 20 F8               	JR	NZ,LSROM1
+      41/    4011 : 05                  	DEC	B
+      42/    4012 : 20 F5               	JR	NZ,LSROM1
+      43/    4014 : 2F                  	CPL			; ES SIND DIE NEGIERTEN WERTE
+      44/    4015 : BE                  	CP	(HL)		; IM ROM ABGESPEICHERT
+      45/    4016 : 20 11               	JR	NZ,LSROM3	; FEHLER
+      46/    4018 : 7B                  	LD	A,E
+      47/    4019 : 2F                  	CPL
+      48/    401A : 23                  	INC  	HL
+      49/    401B : BE                  	CP  	(HL)
+      50/    401C : 20 0B                 	JR	NZ,LSROM3
+      51/    401E : 7A                  	LD  	A,D
+      52/    401F : 2F                  	CPL
+      53/    4020 : 23                  	INC  	HL
+      54/    4021 : BE                  	CP  	(HL)
+      55/    4022 : 20 05                 	JR	NZ,LSROM3
+      56/    4024 : 11 00 71            	LD  	DE,7100H  	; FERTIG IN ANZEIGE
+      57/    4027 : 18 03                 	JR  	LSROM4
+      58/    4029 : 11 11 73            LSROM3  LD  	DE,7311H  	; ERROR IN ANZEIGE
+      59/    402C : CD AC 02            LSROM4  CALL  	KOMDAR
+      60/    402F : CD 4B 01            LSROM5  CALL  	TASTU
+ AS V1.42 Beta [Bld 82] - source file L_S_ROM_TEST.asm - page 2 - 4/10/2012 12:30:53
+
+
+      61/    4032 : 18 FB               	JR  	LSROM5
+      62/    4034 : =2ACH               KOMDAR  EQU  	02ACH
+      63/    4034 : =14BH               TASTU	EQU  	014BH
+      64/    4034 :                     	END
+ AS V1.42 Beta [Bld 82] - source file L_S_ROM_TEST.asm - page 3 - 4/10/2012 12:30:53
+
+
+  symbol table (* = unused):
+  ------------------------
+
+*ARCHITECTURE :  i386-unknown-win32 - | *BIGENDIAN :                      0 - |
+*BRANCHEXT :                      0 - | *CASESENSITIVE :                  0 - |
+*CONSTPI :        3.141592653589793 - | *DATE :                   4/10/2012 - |
+*FALSE :                          0 - | *FULLPMMU :                       1 - |
+*HAS64 :                          1 - | *HASDSP :                         0 - |
+*HASFPU :                         0 - | *HASPMMU :                        0 - |
+*INEXTMODE :                      0 - | *INLWORDMODE :                    0 - |
+*INMAXMODE :                      0 - | *INSRCMODE :                      0 - |
+*INSUPMODE :                      0 - |  KOMDAR :                       2AC - |
+*LISTON :                         1 - |  LSROM1 :                      4009 C |
+ LSROM2 :                      400D C |  LSROM3 :                      4029 C |
+ LSROM4 :                      402C C |  LSROM5 :                      402F C |
+*MACEXP :                         1 - | *MOMCPU :                        80 - |
+*MOMCPUNAME :                   Z80 - | *NESTMAX :                      100 - |
+*PACKING :                        0 - | *PADDING :                        1 - |
+*RELAXED :                        0 - |  TASTU :                        14B - |
+*TIME :                    12:30:53 - | *TRUE :                           1 - |
+*VERSION :                     142F - |
+
+     35 symbols
+     28 unused symbols
+
+ AS V1.42 Beta [Bld 82] - source file L_S_ROM_TEST.asm - page 4 - 4/10/2012 12:30:53
+
+
+  codepages:
+  ----------
+
+STANDARD (0 changed characters)
+
+
+0.03 seconds assembly time
+
+     65 lines source file
+      2 passes
+      0 errors
+      0 warnings

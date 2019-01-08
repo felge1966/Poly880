@@ -1,0 +1,138 @@
+ AS V1.42 Beta [Bld 82] - source file L_S_RAM1_TEST.asm - page 1 - 4/10/2012 13:04:07
+
+
+       1/       0 :                     ; POLY-COMPUTER 880
+       2/       0 :                     ;
+       3/       0 :                     ; 11. Prüfprogramme für den POLY-COMPUTER
+       4/       0 :                     ; Bedienhandbuch, S. 67-79
+       5/       0 :                     ;
+       6/       0 :                     ; assemblieren mit Arnold-Assembler www.alfsembler.de
+       7/       0 :                     ; vp120210
+       8/       0 :                     ;
+       9/       0 :                     	cpu	z80
+      10/       0 :                     
+      11/       0 :                     ;*************************************************************************
+      12/       0 :                     ;
+      13/       0 :                     ; 	TEST DER OBEREN HAELFTE DES RAM IM POLY-COMPUTER
+      14/       0 :                     ;
+      15/       0 :                     ;*************************************************************************
+      16/       0 :                     ;
+      17/       0 :                     ; 	STRATEGIE: DER ZU TESTENDE BEREICH WIRD MIT NULL-BITS GEFUELLT.
+      18/       0 :                     ; 		   DER REIHE NACH WERDEN ALLE BYTES AUF FF GESETZT UND
+      19/       0 :                     ;		   ES WIRD GEPRUEFT, OB DABEI KEINE ANDEREN BITS VER-
+      20/       0 :                     ;		   AENDERT WERDEN. DAMIT WIRD DIE ADRESSDEKODIERUNG
+      21/       0 :                     ; 		   BZW. DIE ZUFUEHRUNG DER ADRESSE ZU DEN RAMS UND DIE
+      22/       0 :                     ;		   INTERNE BITUNABHAENGIGKEIT UEBERPRUEFT.
+      23/       0 :                     ;		   BEI ERKANNTEN FEHLERN FOLGT DIE AUSGABE :
+      24/       0 :                     ;		   	ER<ADRESSE><GELESENE DATEN>
+      25/       0 :                     ;		   IN DER ANZEIGEEINHEIT.
+      26/       0 :                     ;
+      27/       0 :                     ;*************************************************************************
+      28/    4000 :                     	ORG  	4000H
+      29/    4000 : 31 00 42            	LD  	SP,4200H
+      30/    4003 : 11 00 42            	LD  	DE,4200H
+      31/    4006 : 01 00 02            	LD  	BC,200H
+      32/    4009 : C5                  LSRAM1  PUSH  	BC
+      33/    400A : D5                  	PUSH  	DE
+      34/    400B : 21 00 42            	LD  	HL,4200H 	; RAM MIT NULLEN FUELLEN
+      35/    400E : 36 00               	LD  	(HL),00H
+      36/    4010 : 5D                  	LD  	E,L
+      37/    4011 : 54                  	LD  	D,H
+      38/    4012 : 01 FF 01            	LD  	BC,1FFH
+      39/    4015 : 13                   	INC  	DE
+      40/    4016 : ED B0               	LDIR
+      41/    4018 : D1                  	POP  	DE
+      42/    4019 : 3E FF               	LD  	A,0FFH
+      43/    401B : 12                  	LD  	(DE),A
+      44/    401C : 21 00 42            	LD  	HL,4200H
+      45/    401F : 01 00 02            	LD  	BC,200H
+      46/    4022 : 3E 00               LSRAM2  LD  	A,00H
+      47/    4024 : BE                  	CP  	(HL)
+      48/    4025 : 28 0E               	JR	Z,LSRAM3
+      49/    4027 : E5                  	PUSH  	HL
+      50/    4028 : A7                  	AND  	A
+      51/    4029 : ED 52               	SBC  	HL,DE
+      52/    402B : E1                  	POP  	HL
+      53/    402C : 20 1F               	JR	NZ,LSRAM6
+      54/    402E : 3E FF               	LD  	A,0FFH
+      55/    4030 : BE                  	CP  	(HL)
+      56/    4031 : 20 1A               	JR	NZ,LSRAM6
+      57/    4033 : 3E 00               	LD  	A,00H
+      58/    4035 : 0B                  LSRAM3  DEC  	BC		; KEIN FEHLER
+      59/    4036 : 23                  	INC  	HL
+      60/    4037 : 79                  	LD  	A,C
+ AS V1.42 Beta [Bld 82] - source file L_S_RAM1_TEST.asm - page 2 - 4/10/2012 13:04:07
+
+
+      61/    4038 : B0                  	OR  	B
+      62/    4039 : 20 E7               	JR	NZ,LSRAM2  	; EINE BELEGUNG PRUEFEN
+      63/    403B : 13                  LSRAM4  INC  	DE
+      64/    403C : C1                  	POP  	BC
+      65/    403D : 0B                  	DEC  	BC
+      66/    403E : 79                  	LD  	A,C
+      67/    403F : B0                  	OR  	B
+      68/    4040 : 20 C7               	JR	NZ,LSRAM1
+      69/    4042 : 11 00 71            	LD  	DE,7100H  	; ANZEIGE FERTIG
+      70/    4045 : CD AC 02            	CALL  	KOMDAR
+      71/    4048 : CD 4B 01            LSRAM5  CALL  	TASTU
+      72/    404B : 18 FB               	JR  	LSRAM5
+      73/    404D : E5                  LSRAM6  PUSH  	HL  		; FEHLER ERKANNT
+      74/    404E : 11 11 73            	LD  	DE,7311H  	; ER AUSGEBEN
+      75/    4051 : CD AC 02            	CALL  	KOMDAR
+      76/    4054 : E1                  	POP  	HL  		; ADRESSE
+      77/    4055 : E5                  	PUSH  	HL
+      78/    4056 : CD 2D 03            	CALL  	ADRAUS
+      79/    4059 : E1                  	POP  	HL
+      80/    405A : 66                  	LD  	H,(HL)  	; DATEN
+      81/    405B : CD 38 03            	CALL  	DAAUS
+      82/    405E : C1                  	POP  	BC
+      83/    405F : 18 E7               	JR  	LSRAM5
+      84/    4061 : =32DH               ADRAUS  EQU  	032DH
+      85/    4061 : =338H               DAAUS  	EQU  	0338H
+      86/    4061 : =2ACH               KOMDAR  EQU  	02ACH
+      87/    4061 : =14BH               TASTU  	EQU  	014BH
+      88/    4061 :                     	END
+ AS V1.42 Beta [Bld 82] - source file L_S_RAM1_TEST.asm - page 3 - 4/10/2012 13:04:07
+
+
+  symbol table (* = unused):
+  ------------------------
+
+ ADRAUS :                       32D - | *ARCHITECTURE :  i386-unknown-win32 - |
+*BIGENDIAN :                      0 - | *BRANCHEXT :                      0 - |
+*CASESENSITIVE :                  0 - | *CONSTPI :        3.141592653589793 - |
+ DAAUS :                        338 - | *DATE :                   4/10/2012 - |
+*FALSE :                          0 - | *FULLPMMU :                       1 - |
+*HAS64 :                          1 - | *HASDSP :                         0 - |
+*HASFPU :                         0 - | *HASPMMU :                        0 - |
+*INEXTMODE :                      0 - | *INLWORDMODE :                    0 - |
+*INMAXMODE :                      0 - | *INSRCMODE :                      0 - |
+*INSUPMODE :                      0 - |  KOMDAR :                       2AC - |
+*LISTON :                         1 - |  LSRAM1 :                      4009 C |
+ LSRAM2 :                      4022 C |  LSRAM3 :                      4035 C |
+*LSRAM4 :                      403B C |  LSRAM5 :                      4048 C |
+ LSRAM6 :                      404D C | *MACEXP :                         1 - |
+*MOMCPU :                        80 - | *MOMCPUNAME :                   Z80 - |
+*NESTMAX :                      100 - | *PACKING :                        0 - |
+*PADDING :                        1 - | *RELAXED :                        0 - |
+ TASTU :                        14B - | *TIME :                    13:04:07 - |
+*TRUE :                           1 - | *VERSION :                     142F - |
+
+     38 symbols
+     29 unused symbols
+
+ AS V1.42 Beta [Bld 82] - source file L_S_RAM1_TEST.asm - page 4 - 4/10/2012 13:04:07
+
+
+  codepages:
+  ----------
+
+STANDARD (0 changed characters)
+
+
+0.02 seconds assembly time
+
+     89 lines source file
+      2 passes
+      0 errors
+      0 warnings

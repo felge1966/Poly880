@@ -1,0 +1,89 @@
+; POLY-COMPUTER 880
+;
+; 11. Prüfprogramme für den POLY-COMPUTER
+; Bedienhandbuch, S. 67-79
+;
+; assemblieren mit Arnold-Assembler www.alfsembler.de
+; vp120210
+;
+	cpu	z80
+
+;*************************************************************************
+;
+; 	TEST DER OBEREN HAELFTE DES RAM IM POLY-COMPUTER
+;
+;*************************************************************************
+;
+; 	STRATEGIE: DER ZU TESTENDE BEREICH WIRD MIT NULL-BITS GEFUELLT.
+; 		   DER REIHE NACH WERDEN ALLE BYTES AUF FF GESETZT UND
+;		   ES WIRD GEPRUEFT, OB DABEI KEINE ANDEREN BITS VER-
+;		   AENDERT WERDEN. DAMIT WIRD DIE ADRESSDEKODIERUNG
+; 		   BZW. DIE ZUFUEHRUNG DER ADRESSE ZU DEN RAMS UND DIE
+;		   INTERNE BITUNABHAENGIGKEIT UEBERPRUEFT.
+;		   BEI ERKANNTEN FEHLERN FOLGT DIE AUSGABE :
+;		   	ER<ADRESSE><GELESENE DATEN>
+;		   IN DER ANZEIGEEINHEIT.
+;
+;*************************************************************************
+	ORG  	4000H
+	LD  	SP,4200H
+	LD  	DE,4200H
+	LD  	BC,200H
+LSRAM1  PUSH  	BC
+	PUSH  	DE
+	LD  	HL,4200H 	; RAM MIT NULLEN FUELLEN
+	LD  	(HL),00H
+	LD  	E,L
+	LD  	D,H
+	LD  	BC,1FFH
+ 	INC  	DE
+	LDIR
+	POP  	DE
+	LD  	A,0FFH
+	LD  	(DE),A
+	LD  	HL,4200H
+	LD  	BC,200H
+LSRAM2  LD  	A,00H
+	CP  	(HL)
+	JR	Z,LSRAM3
+	PUSH  	HL
+	AND  	A
+	SBC  	HL,DE
+	POP  	HL
+	JR	NZ,LSRAM6
+	LD  	A,0FFH
+	CP  	(HL)
+	JR	NZ,LSRAM6
+	LD  	A,00H
+LSRAM3  DEC  	BC		; KEIN FEHLER
+	INC  	HL
+	LD  	A,C
+	OR  	B
+	JR	NZ,LSRAM2  	; EINE BELEGUNG PRUEFEN
+LSRAM4  INC  	DE
+	POP  	BC
+	DEC  	BC
+	LD  	A,C
+	OR  	B
+	JR	NZ,LSRAM1
+	LD  	DE,7100H  	; ANZEIGE FERTIG
+	CALL  	KOMDAR
+LSRAM5  CALL  	TASTU
+	JR  	LSRAM5
+LSRAM6  PUSH  	HL  		; FEHLER ERKANNT
+	LD  	DE,7311H  	; ER AUSGEBEN
+	CALL  	KOMDAR
+	POP  	HL  		; ADRESSE
+	PUSH  	HL
+	CALL  	ADRAUS
+	POP  	HL
+	LD  	H,(HL)  	; DATEN
+	CALL  	DAAUS
+	POP  	BC
+	JR  	LSRAM5
+ADRAUS  EQU  	032DH
+DAAUS  	EQU  	0338H
+KOMDAR  EQU  	02ACH
+TASTU  	EQU  	014BH
+	END
+	

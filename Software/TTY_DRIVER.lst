@@ -1,0 +1,136 @@
+ AS V1.42 Beta [Bld 82] - source file TTY_DRIVER.asm - page 1 - 4/10/2012 11:41:13
+
+
+       1/       0 :                     ; POLY-COMPUTER 880
+       2/       0 :                     ;
+       3/       0 :                     ; 8. Die Nutzung des Fernschreiberanschlusses im POLY-COMPUTER 880
+       4/       0 :                     ; Bedienhandbuch, S. 52-56
+       5/       0 :                     ;
+       6/       0 :                     ; assemblieren mit Arnold-Assembler www.alfsembler.de
+       7/       0 :                     ; vp120210
+       8/       0 :                     ;
+       9/       0 :                     	cpu	z80
+      10/       0 :                     
+      11/       0 :                     ;*************************************************************************
+      12/       0 :                     ;
+      13/       0 :                     ;	UNTERPROGRAMME ZUR EIN- BZW. AUSGABE EINES 5-BIT ZEICHENS
+      14/       0 :                     ;  	UEBER DEN FERNSCHREIBERANSCHLUSS (PIOD2 BIT 0)
+      15/       0 :                     ;
+      16/       0 :                     ;*************************************************************************
+      17/       0 :                     ;	EMPFANG EINES ZEICHENS
+      18/       0 :                     ;	ZEICHEN WIRD IN D4-D0 DES REGISTERS C UEBERGEBEN
+      19/       0 :                     ;	ZERSTOERT: AF,BC,DE
+      20/       0 :                     ;	STACKBEDARF: 4 (EINSCHLIESSLICH AUFRUF VON FREC)
+      21/       0 :                     ;
+      22/    4300 :                     	ORG 	4300H 		; ANFANGSADRESSE
+      23/    4300 : =82H                PIOD2  	EQU 	082H 		; PIOADRESSE KANAL B DATEN
+      24/    4300 : =83H                PIOC2  	EQU 	083H 		; PIOADRESSE KANAL B CONTROL
+      25/    4300 : DB 82               FREC  	IN 	A,PIOD2
+      26/    4302 : CB 47               	BIT 	0,A 		; TEST DER EMPFANGSLEITUNG
+      27/    4304 : 20 FA               	JR	NZ,FREC		; AUF STARTBIT WARTEN
+      28/    4306 : 11 26 04            	LD 	DE,NTTY+NTTY/2 	; 1 1/2 BIT WARTEN
+      29/    4309 : CD 56 43            	CALL 	TIMEx
+      30/    430C : CB 47               	BIT 	0,A 		; AUF STARTPOLARITAET PRUEFEN
+      31/    430E : 06 05               	LD 	B,5 		; BITANZAHL
+      32/    4310 : DB 82               FREC1  	IN 	A,PIOD2		; LEITUNG IN BITMITTE ABTASTEN
+      33/    4312 : CB 47               	BIT 	0,A
+      34/    4314 : 37                  	SCF
+      35/    4315 : 20 01               	JR	NZ, FREC2 	; 1 ERKANNT
+      36/    4317 : 3F                  	CCF 			; 0 ERKANNT
+      37/    4318 : CB 19               FREC2  	RR 	C 		; BIT IN REGISTER C SCHIEBEN 
+      38/    431A : 11 C4 02            	LD 	DE,NTTY 
+      39/    431D : CD 56 43            	CALL 	TIMEx 
+      40/    4320 : 10 EE               	DJNZ 	FREC1 		; 5 BIT LESEN 
+      41/    4322 : CB 39               	SRL 	C 
+      42/    4324 : CB 39               	SRL 	C 
+      43/    4326 : CB 39               	SRL 	C 		; ZEICHEN NORMALISIEREN 
+      44/    4328 : C9                  	RET 
+      45/    4329 :                     ;*************************************************************************
+      46/    4329 :                     ;	AUSSENDEN EINES 5 BIT-ZEICHENS
+      47/    4329 :                     ;	ZEICHEN MUSS SICH IN D4-D0 VON REGISTER C BEFINDEN
+      48/    4329 :                     ;	ZERSTOERT AF,BC,DE
+      49/    4329 :                     ;	STACKBEDARF: 4 (EINSCHLIESSLICH DES AUFRUFS VON FSEND)
+      50/    4329 :                     ;
+      51/    4329 : 3E CF               FSEND 	LD 	A,0CFH 		; MODE 3 DER PIO
+      52/    432B : D3 83               	OUT 	PIOC2,A
+      53/    432D : 3E BA               	LD 	A,0BAH 		; FERNSCHREIBERANSCHLUSS AUF
+      54/    432F : D3 83               	OUT 	PIOC2,A		; AUSGABE
+      55/    4331 : CB 21               	SLA 	C 		; STARTBIT
+      56/    4333 : CB F1               	SET 	6,C 		; 1. STOPBIT
+      57/    4335 : CB F9               	SET 	7,C 		; 2. STOPBIT
+      58/    4337 : 06 08               	LD 	B,8 		; BITANZAHL
+      59/    4339 : DB 82               FSEND1 	IN 	A,PIOD2
+      60/    433B : CB 87               	RES 	0,A
+ AS V1.42 Beta [Bld 82] - source file TTY_DRIVER.asm - page 2 - 4/10/2012 11:41:13
+
+
+      61/    433D : CB 09               	RRC 	C
+      62/    433F : 30 02               	JR	NC,FSEND2 	; 0 SENDEN
+      63/    4341 : CB C7               	SET 	0,A 		; 1 SENDEN
+      64/    4343 : D3 82               FSEND2 	OUT 	PIOD2,A		; BIT SENDEN
+      65/    4345 : 11 C4 02            	LD 	DE,NTTY
+      66/    4348 : CD 56 43            	CALL 	TIMEx 		; 1 BIT WARTEN
+      67/    434B : 10 EC               	DJNZ 	FSEND1		; 7 BIT SENDEN
+      68/    434D : 3E CF               	LD 	A,0CFH 		; MODE 3 DER PIO
+      69/    434F : D3 83               	OUT 	PIOC2,A
+      70/    4351 : 3E BB               	LD 	A, 0BBH 	; FERNSCHREIBERANSCHLUSS
+      71/    4353 : D3 83               	OUT 	PIOC2,A		; AUF EINGABE
+      72/    4355 : C9                  	RET
+      73/    4356 : =2C4H               NTTY 	EQU 	02C4H 		; ZAEHLWERT FUER EIN  BIT (20 MS)
+      74/    4356 :                     ;*************************************************************************
+      75/    4356 :                     ;
+      76/    4356 :                     ;	ZEITSCHLEIFE
+      77/    4356 :                     ;	VERZOEGERT 26*DE PROZESSORTAKTE
+      78/    4356 :                     ;	ZERSTOERT: AF,DE
+      79/    4356 :                     ;	STACKBEDARF: 2 BYTE
+      80/    4356 :                     ;
+      81/    4356 : 1B                  TIMEx 	DEC 	DE
+      82/    4357 : 7B                  	LD 	A, E
+      83/    4358 : B2                  	OR 	D
+      84/    4359 : 20 FB               	JR	NZ, TIMEx
+      85/    435B : C9                  	RET
+      86/    435C :                     	END
+ AS V1.42 Beta [Bld 82] - source file TTY_DRIVER.asm - page 3 - 4/10/2012 11:41:13
+
+
+  symbol table (* = unused):
+  ------------------------
+
+*ARCHITECTURE :  i386-unknown-win32 - | *BIGENDIAN :                      0 - |
+*BRANCHEXT :                      0 - | *CASESENSITIVE :                  0 - |
+*CONSTPI :        3.141592653589793 - | *DATE :                   4/10/2012 - |
+*FALSE :                          0 - |  FREC :                        4300 C |
+ FREC1 :                       4310 C |  FREC2 :                       4318 C |
+*FSEND :                       4329 C |  FSEND1 :                      4339 C |
+ FSEND2 :                      4343 C | *FULLPMMU :                       1 - |
+*HAS64 :                          1 - | *HASDSP :                         0 - |
+*HASFPU :                         0 - | *HASPMMU :                        0 - |
+*INEXTMODE :                      0 - | *INLWORDMODE :                    0 - |
+*INMAXMODE :                      0 - | *INSRCMODE :                      0 - |
+*INSUPMODE :                      0 - | *LISTON :                         1 - |
+*MACEXP :                         1 - | *MOMCPU :                        80 - |
+*MOMCPUNAME :                   Z80 - | *NESTMAX :                      100 - |
+ NTTY :                         2C4 - | *PACKING :                        0 - |
+*PADDING :                        1 - |  PIOC2 :                         83 - |
+ PIOD2 :                         82 - | *RELAXED :                        0 - |
+*TIME :                    11:41:13 - |  TIMEX :                       4356 C |
+*TRUE :                           1 - | *VERSION :                     142F - |
+
+     38 symbols
+     29 unused symbols
+
+ AS V1.42 Beta [Bld 82] - source file TTY_DRIVER.asm - page 4 - 4/10/2012 11:41:13
+
+
+  codepages:
+  ----------
+
+STANDARD (0 changed characters)
+
+
+0.02 seconds assembly time
+
+     89 lines source file
+      2 passes
+      0 errors
+      0 warnings

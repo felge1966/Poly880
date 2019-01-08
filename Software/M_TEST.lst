@@ -1,0 +1,117 @@
+ AS V1.42 Beta [Bld 82] - source file L_S_M_TEST.asm - page 1 - 4/10/2012 12:47:45
+
+
+       1/       0 :                     ; POLY-COMPUTER 880
+       2/       0 :                     ;
+       3/       0 :                     ; 11. Prüfprogramme für den POLY-COMPUTER
+       4/       0 :                     ; Bedienhandbuch, S. 67-79
+       5/       0 :                     ;
+       6/       0 :                     ; assemblieren mit Arnold-Assembler www.alfsembler.de
+       7/       0 :                     ; vp120210
+       8/       0 :                     ;
+       9/       0 :                     	cpu	z80
+      10/       0 :                     
+      11/       0 :                     ;*************************************************************************
+      12/       0 :                     ;
+      13/       0 :                     ;	TESTPROGRAMM FUER DEN MAGNETBANDANSCHLUSS
+      14/       0 :                     ;
+      15/       0 :                     ;*************************************************************************
+      16/       0 :                     ;
+      17/       0 :                     ;	STRATEGIE: EIN- UND AUSGANG DES MAGNETBANDANSCHLUSSES SIND
+      18/       0 :                     ;		   DURCH EINEN WIDERSTAND VON 10K MITEINANDER
+      19/       0 :                     ;		   ZU VERBINDEN. DAS TESTPROGRAMM SENDET EIN SIGNAL
+      20/       0 :                     ;		   MIT EINER FREQUENZ VON ETWA 100 HZ UND BEWERTET
+      21/       0 :                     ;		   DIE OBERE UND DIE UNTERE GRENZFREQUENZ. FEHLER
+      22/       0 :                     ;		   WERDEN AUSGEGEBEN. DURCH DEN WIDERSTAND KANN DIE
+      23/       0 :                     ;		   EMPFINDLICHKEIT DES VERFAHRENS BEEINFLUSST WERDEN.
+      24/       0 :                     ;		   (KEINE FEHLER BEI R=10K BEDEUTET EINE EMPFINDLICHKEIT
+      25/       0 :                     ;		   VON ETWA 50 MILLIVOLT.)
+      26/       0 :                     ;
+      27/       0 :                     ;*************************************************************************
+      28/    4000 :                     	ORG 	4000H
+      29/    4000 : 11 00 10            	LD 	DE,1000H 	; ANZAHL DER TESTBITS
+      30/    4003 : DB 82               LSMB1  	IN 	A,PIOD2
+      31/    4005 : EE 04                	XOR 	04H 		; AUSGABE UMSCHALTEN
+      32/    4007 : 6F                   	LD 	L,A
+      33/    4008 : D3 82                	OUT 	PIOD2,A
+      34/    400A : 06 04                	LD 	B,04H
+      35/    400C : 10 FE                	DJNZ 	$		; 60 MIKROSEKUNDEN WARTEN
+      36/    400E : DB 82                	IN 	A,PIOD2		; BIT ABTASTEN
+      37/    4010 : 07                  	RLCA
+      38/    4011 : AD                  	XOR 	L
+      39/    4012 : CB 57               	BIT  	2,A
+      40/    4014 : 28 20               	JR	Z,LSMB5		; FEHLER DER OBEREN GRENZFREQUENZ
+      41/    4016 : 01 00 02            	LD  	BC,0200H
+      42/    4019 : 0B                  LSMB2  	DEC  	BC
+      43/    401A : 79                  	LD  	A,C
+      44/    401B : B0                  	OR  	B
+      45/    401C : 20 FB               	JR	NZ,LSMB2
+      46/    401E : DB 82               	IN  	A,PIOD2
+      47/    4020 : 07                  	RLCA
+      48/    4021 : AD                  	XOR  	L
+      49/    4022 : CB 57               	BIT  	2,A
+      50/    4024 : 28 15               	JR	Z,LSMB6  	; FEHLER DER UNTEREN GRENZFREQUENZ
+      51/    4026 : 1B                  	DEC  	DE
+      52/    4027 : 7B                  	LD 	A,E
+      53/    4028 : B2                  	OR  	D
+      54/    4029 : 20 D8               	JR	NZ,LSMB1
+      55/    402B : 11 00 71            	LD  	DE,7100H  	; FERTIG IN  ANZEIGE
+      56/    402E : CD AC 02            LSMB3  	CALL  	KOMDAR
+      57/    4031 : CD 4B 01            LSMB4  	CALL  	TASTU
+      58/    4034 : 18 FB               	JR  	LSMB4
+      59/    4036 : 11 E7 73            LSMB5  	LD  	DE,73E7H 	; FEHLER OBERE GRENZFREQUENZ
+      60/    4039 : 18 F3               	JR  	LSMB3
+ AS V1.42 Beta [Bld 82] - source file L_S_M_TEST.asm - page 2 - 4/10/2012 12:47:45
+
+
+      61/    403B : 11 C7 73            LSMB6  	LD  	DE,73C7H  	; FEHLER UNTERE GRENZFREQUENZ
+      62/    403E : 18 EE               	JR  	LSMB3
+      63/    4040 : =2ACH               KOMDAR  EQU  	02ACH
+      64/    4040 : =14BH               TASTU  	EQU  	014BH
+      65/    4040 : =82H                PIOD2   EQU  	82H
+      66/    4040 : =83H                PIOC2  	EQU  	83H
+      67/    4040 :                     	END
+ AS V1.42 Beta [Bld 82] - source file L_S_M_TEST.asm - page 3 - 4/10/2012 12:47:45
+
+
+  symbol table (* = unused):
+  ------------------------
+
+*ARCHITECTURE :  i386-unknown-win32 - | *BIGENDIAN :                      0 - |
+*BRANCHEXT :                      0 - | *CASESENSITIVE :                  0 - |
+*CONSTPI :        3.141592653589793 - | *DATE :                   4/10/2012 - |
+*FALSE :                          0 - | *FULLPMMU :                       1 - |
+*HAS64 :                          1 - | *HASDSP :                         0 - |
+*HASFPU :                         0 - | *HASPMMU :                        0 - |
+*INEXTMODE :                      0 - | *INLWORDMODE :                    0 - |
+*INMAXMODE :                      0 - | *INSRCMODE :                      0 - |
+*INSUPMODE :                      0 - |  KOMDAR :                       2AC - |
+*LISTON :                         1 - |  LSMB1 :                       4003 C |
+ LSMB2 :                       4019 C |  LSMB3 :                       402E C |
+ LSMB4 :                       4031 C |  LSMB5 :                       4036 C |
+ LSMB6 :                       403B C | *MACEXP :                         1 - |
+*MOMCPU :                        80 - | *MOMCPUNAME :                   Z80 - |
+*NESTMAX :                      100 - | *PACKING :                        0 - |
+*PADDING :                        1 - | *PIOC2 :                         83 - |
+ PIOD2 :                         82 - | *RELAXED :                        0 - |
+ TASTU :                        14B - | *TIME :                    12:47:45 - |
+*TRUE :                           1 - | *VERSION :                     142F - |
+
+     38 symbols
+     29 unused symbols
+
+ AS V1.42 Beta [Bld 82] - source file L_S_M_TEST.asm - page 4 - 4/10/2012 12:47:45
+
+
+  codepages:
+  ----------
+
+STANDARD (0 changed characters)
+
+
+0.03 seconds assembly time
+
+     68 lines source file
+      2 passes
+      0 errors
+      0 warnings

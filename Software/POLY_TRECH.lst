@@ -1,0 +1,297 @@
+ AS V1.42 Beta [Bld 82] - source file POLY_TRECH.asm - page 1 - 4/23/2012 9:44:23
+
+
+       1/       0 :                     ; POLY-COMPUTER	880
+       2/       0 :                     ;
+       3/       0 :                     ; 10.3.1. Der POLY-COMPUTER als einfacher Taschenrechner
+       4/       0 :                     ; Arbeitshandbuch, S. 208-222
+       5/       0 :                     ;
+       6/       0 :                     ; assemblieren mit Arnold-Assembler www.alfsembler.de
+       7/       0 :                     ; vp120210
+       8/       0 :                     ;
+       9/       0 :                     	cpu	z80
+      10/       0 :                     
+      11/       0 :                     ;
+      12/       0 :                     ; PROGRAMMIERBEISPIEL "TASCHENRECHNER" 
+      13/       0 :                     ;
+      14/       0 :                     ; MODUL "ZAHL EINLESEN" 
+      15/       0 :                     ;	UEBERGABE REGISTER X - HL 
+      16/       0 :                     ;		(REGISTER Y - DE: NICHT AENDERN) 
+      17/       0 :                     ;	AUFGABE: ANZEIGE DES X-REGISTERS 
+      18/       0 :                     ;		EINLESEN EINES NEUEN X-INHALTS 
+      19/       0 :                     ;		BIS OPERATIONSTASTE ERKANNT 
+      20/       0 :                     ; 	
+      21/    4000 :                      	ORG  	4000H 
+      22/    4000 : D5                  ZAHL 	PUSH  	DE 
+      23/    4001 : E5                   	PUSH  	HL 		;X,Y IN STACK RETTEN 
+      24/    4002 : CD 6C 40             	CALL  	LOANZ 		;ANZEIGE LOESCHEN 
+      25/    4005 : 3E 05                	LD  	A,5 		;5 STELLEN ANZEIGEN 
+      26/    4007 : 01 0A 00            ZAHL1 	LD  	BC,10 		;FAKTOR 10 DEZIMAL 
+      27/    400A : 11 FF FF             	LD  	DE,0FFFFH 	;QUOTIENT:=-1 
+      28/    400D : 13                  ZAHL2 	INC  	DE 
+      29/    400E : A7                   	AND  	A 		;CY:=0 
+      30/    400F : ED 42                	SBC  	HL,BC 
+      31/    4011 : 30 FA                	JR	NC,ZAHL2 
+      32/    4013 : 09                   	ADD  	HL,BC 		;IN HL DIV.-REST 
+      33/    4014 : E5                   	PUSH  	HL 		;ABSPEICHERN 
+      34/    4015 : EB                   	EX  	DE,HL 
+      35/    4016 : 3D                   	DEC  	A 
+      36/    4017 : 20 EE                	JR	NZ,ZAHL1 
+      37/    4019 :                     ;KONVERTIERTE ZAHL ANZEIGEN 
+      38/    4019 : 0E 05                	LD  	C,5 		;5 STELLEN 
+      39/    401B : D1                  ZAHL3 	POP  	DE 		;ZIFFER IN E 
+      40/    401C : 7B                   	LD  	A,E 
+      41/    401D : 06 07                	LD  	B,7 
+      42/    401F : 21 7F 40             	LD  	HL,ANZ 
+      43/    4022 : CD 00 03             	CALL  	ZIFANZ 		;ZIFFER IN ANZEIGE 
+      44/    4025 : 0D                   	DEC  	C 
+      45/    4026 : 20 F3                	JR	NZ,ZAHL3 
+      46/    4028 :                     ;TASTATURABFRAGE, NEUES X ODER OPERATION 
+      47/    4028 : 11 7F 40            ZAHL4 	LD  	DE,ANZ 
+      48/    402B : CD 4E 01             	CALL  	KONSOL 
+      49/    402E : 28 F8                	JR	Z,ZAHL4 	;WARTEN BIS TASTE BETAET. 
+      50/    4030 : 79                   	LD  	A,C 		;HEX. TASTENKODE 
+      51/    4031 : FE 0A                	CP  	0AH 
+      52/    4033 : 30 2D                	JR	NC,ZAHL6 	;SPRUNG. WENN TASTE A..F 
+      53/    4035 : CD 6C 40             	CALL  	LOANZ 
+      54/    4038 : 21 00 00             	LD  	HL,0 		;X - ANFANGSWERT 
+      55/    403B : E5                  ZAHL5 	PUSH  	HL 
+      56/    403C : F5                   	PUSH  	AF 
+      57/    403D : 06 07                	LD  	B,7 
+      58/    403F : 21 7F 40             	LD  	HL,ANZ 
+      59/    4042 : CD 00 03             	CALL  	ZIFANZ 		;EINGEG. ZIFFER ANZEIGEN 
+      60/    4045 : F1                   	POP  	AF 
+ AS V1.42 Beta [Bld 82] - source file POLY_TRECH.asm - page 2 - 4/23/2012 9:44:23
+
+
+      61/    4046 : E1                   	POP  	HL 
+      62/    4047 : 5F                   	LD  	E,A 
+      63/    4048 : 16 00                	LD  	D,0 		;NEUE ZIFFER NACH DE 
+      64/    404A : 06 0A                	LD  	B,10 		;FAKTOR 10 
+      65/    404C : EB                   	EX  	DE,HL 
+      66/    404D : 19                  ZAHL7 	ADD  	HL,DE 		;X:=(10*X)+ZIFFER 
+      67/    404E : 38 13                	JR	C,ZAHLF		;ZAHL ZU GROSS 
+      68/    4050 :                     	;RUECKKEHR MIT FEHLERMARKIERUNG CY=1 
+      69/    4050 : 10 FB               	DJNZ 	ZAHL7 
+      70/    4052 : E5                  	PUSH 	HL 
+      71/    4053 :                     ;TASTATURABFRRGE MACH WEITEREN ZIFFERN 
+      72/    4053 : 11 7F 40            ZAHL8  	LD 	DE,ANZ 
+      73/    4056 : CD 4E 01            	CALL 	KONSOL 
+      74/    4059 : 28 F8               	JR	Z,ZAHL8 
+      75/    405B : E1                  	POP 	HL 
+      76/    405C : 79                  	LD 	A,C 
+      77/    405D : FE 0A               	CP 	0AH 
+      78/    405F : 38 DA               	JR	C,ZAHL5 	;SPRUNG.WENN WEITERE ZIFFER
+      79/    4061 : E3                  	EX 	(SP),HL 	;NEUES X ERSETZT ALTES 
+      80/    4062 : A7                  ZAHL6  	AND 	A 		;CY:=0,KEIN FEHLER 
+      81/    4063 : E1                  ZAHLF  	POP 	HL 
+      82/    4064 : D1                  	POP 	DE 		;X,Y IN HL, DE 
+      83/    4065 : C9                  	RET 
+      84/    406C :                     	ORG 	$+6 
+      85/    406C :                     
+      86/    406C :                     ;HILFSPROZEDUR "LOESCHEN DER ANZEIGE" 
+      87/    406C : E5                  LOANZ  	PUSH 	HL 		;HL RETTEN 
+      88/    406D : 06 08               	LD 	B,8 		;8 ANZEIGESTELLEN 
+      89/    406F : 21 7F 40            	LD 	HL,ANZ 
+      90/    4072 : 36 00               LO1  	LD 	(HL),0 
+      91/    4074 : 23                  	INC 	HL 
+      92/    4075 : 10 FB               	DJNZ 	LO1 
+      93/    4077 : E1                  	POP 	HL 
+      94/    4078 : C9                  	RET 
+      95/    407F :                     	ORG 	$+6 
+      96/    407F :                     ;
+      97/    407F :                     ;ANZEIGEBEREICH 
+      98/    407F :                     ANZ 	DS 	8 		;8 BYTE ANZEIGEBEREICH 
+      99/    4087 :                     ;
+     100/    4087 :                     ;STARTADRESSEN DER MONITOR-UNTERPROGRAMME 
+     101/    4087 :                     ;(SIEHE BEDIENBESCHREIBUNG) 
+     102/    4087 : =14EH               KONSOL  EQU 	14EH 
+     103/    4087 : =300H               ZIFANZ  EQU 	300H 
+     104/    4087 :                     
+     105/    4087 :                     
+     106/    4087 :                     
+     107/    4087 :                     ; MODUL "OPERATION AUSWERTEN" 
+     108/    4087 :                     ;	UEBERGABE: A - FUNKTIONSKODIERUNG 0A-0F
+     109/    4087 :                     ;	RUECKGABE: IX - STARTADRESSE DES FUNKTIONS-UP 
+     110/    4087 :                     ;		DE, HL DUERFEN NICHT VERAENDERT WERDEN 
+     111/    4087 :                     ;	ALGORITHMUS: AUSLESEN EINER LISTE DER START- 
+     112/    4087 :                     ;		ADRESSEN MIT EINEM ZEIGER :=
+     113/    4087 :                     ;		(KODIERUNG-0AH)*2 + LISTENANFANGSADRESSE 
+     114/    4087 :                     
+     115/    4087 : E5                  OPAUSW  PUSH 	HL 
+     116/    4088 : 21 A0 40            	LD 	HL,LISTE 
+     117/    408B : D6 0A               	SUB 	0AH 		;A:=KODIERUNG-0AH
+     118/    408D : 07                  	RLCA 	 		;A:=2*A
+     119/    408E : 4F                  	LD 	C,A 
+     120/    408F : 06 00               	LD 	B,0 		;ERG. NACH BC 
+ AS V1.42 Beta [Bld 82] - source file POLY_TRECH.asm - page 3 - 4/23/2012 9:44:23
+
+
+     121/    4091 : 09                  	ADD 	HL,BC 
+     122/    4092 : 4E                  	LD 	C,(HL) 		;NIEDERWERT.TEIL 
+     123/    4093 : 23                  	INC 	HL 
+     124/    4094 : 46                  	LD 	B,(HL) 		;HOEHERWERT. TEIL 
+     125/    4095 : C5                  	PUSH 	BC 
+     126/    4096 : FD E1               	POP 	IY 		;STARTADRESSE IN IY
+     127/    4098 : E1                  	POP 	HL 
+     128/    4099 : C9                  	RET 
+     129/    40A0 :                     	ORG 	$+6 
+     130/    40A0 :                     ;
+     131/    40A0 :                     ;LISTE DER STRRTAORESSEN DER FUNKTIONEN 
+     132/    40A0 :                     ; IN DER REIHENFOLGE DER TASTENKODIERUNGEN 
+     133/    40A0 :                     ;
+     134/    40A0 : D9 40               LISTE  	DW 	ADDW		;TASTE "A"
+     135/    40A2 : E1 40               	DW 	SUBW 		;TASTE "B" 
+     136/    40A4 : EC 40               	DW 	MULW 		;TASTE "C" 
+     137/    40A6 : FF 40               	DW 	DIVW 		;TASTE "D" 
+     138/    40A8 : 19 41               	DW 	EINGAB 		;TASTE "E" 
+     139/    40AA : 22 41               	DW 	FREI 		;TASTE "F"
+     140/    40AC :                     ;
+     141/    40AC :                     ;HAUPTRROGRAMM TASCHENRECHNER 
+     142/    40AC :                     ;
+     143/    40AC : CD 00 40            TARECH  CALL 	ZAHL 
+     144/    40AF : 38 0B               	JR	C,FEHLER 
+     145/    40B1 : CD 87 40            	CALL 	OPAUSW 
+     146/    40B4 : 01 BA 40            	LD 	BC,TARE1  	;RUECKKEHRADRESSE DER UP 
+     147/    40B7 : C5                  	PUSH 	BC 		;AUF STACK ABSPEICHERN 
+     148/    40B8 : FD E9               	JP 	(IY)	 	;UP ANSPRINGEN
+     149/    40BA : 30 F0               TARE1  	JR	NC,TARECH 	;WEITERRECHNEN, WENN 
+     150/    40BC :                     				;KEIN FEHLER 
+     151/    40BC :                     ;ANZEIGE EINES FEHLERS 
+     152/    40BC : E5                  FEHLER  PUSH 	HL 
+     153/    40BD : D5                  	PUSH 	DE 
+     154/    40BE : 21 7F 40            	LD 	HL,ANZ 
+     155/    40C1 : 11 73 71            	LD 	DE,07173H 	;K0DE FUER ANZEIGE "FE" 
+     156/    40C4 : CD AF 02            	CALL 	FUNKAN 		;ANZEIGEN 
+     157/    40C7 : 11 7F 40            FE1  	LD 	DE,ANZ 
+     158/    40CA : CD 4E 01             	CALL 	KONSOL 		;WARTEN AUF TASTATURBETAETIGUNG
+     159/    40CD : 28 F8               	JR	Z,FE1 		;ZUR  FEHLEROUITTIERUNG 
+     160/    40CF : D1                  	POP 	DE 
+     161/    40D0 : E1                  	POP 	HL 
+     162/    40D1 : 18 D9               	JR 	TARECH 
+     163/    40D3 :                     ;UNTERPROGRANN FUNKAN DES MONITORS 
+     164/    40D3 : =2AFH               FUNKAN  EQU 	2AFH 
+     165/    40D9 :                     	ORG 	$+6
+     166/    40D9 :                     
+     167/    40D9 :                     
+     168/    40D9 :                     
+     169/    40D9 :                     
+     170/    40D9 :                     ;MODUL "ARITHMETIK" 
+     171/    40D9 :                     ; ALLGEMEINE MERKMALE: 
+     172/    40D9 :                     ;	1.OPERAND - DE 
+     173/    40D9 :                     ;	2.OPERRND - HL
+     174/    40D9 :                     ;	ERGEBNIS - HL 
+     175/    40D9 :                     ;	BEI UNZULAESSIGER OPERATION: CY:=1 
+     176/    40D9 :                     ;
+     177/    40D9 :                     ;16-BIT-ADDITION 
+     178/    40D9 : 19                  ADDW 	ADD 	HL,DE
+     179/    40DA : C9                  	RET 
+     180/    40E1 :                      	ORG 	$+6 
+ AS V1.42 Beta [Bld 82] - source file POLY_TRECH.asm - page 4 - 4/23/2012 9:44:23
+
+
+     181/    40E1 :                     ;
+     182/    40E1 :                     ;16-BIT-SUBTRAKTION 
+     183/    40E1 : EB                  SUBW 	EX 	DE,HL 
+     184/    40E2 : A7                  	AND 	A 		;CY:=0 
+     185/    40E3 : ED 52               	SBC 	HL,DE 
+     186/    40E5 : C9                  	RET 
+     187/    40EC :                      	ORG 	$+6 
+     188/    40EC :                     ;
+     189/    40EC :                     ;16-BIT-MULTIPLIKATION 
+     190/    40EC : 44                  MULW 	LD 	B,H 
+     191/    40ED : 4D                  	LD 	C,L 		;FAKTOR NACH BC 
+     192/    40EE : 21 00 00            	LD 	HL,0 		;ANF.WERT PRODUKT 
+     193/    40F1 : 78                  MULW1 	LD 	A,B
+     194/    40F2 : B1                  	OR 	C 		;A=0,WENN BC=0 
+     195/    40F3 : C8                  	RET	Z 
+     196/    40F4 : 0B                  	DEC 	BC 		;FAKTOR HERUNTERZAEHLEN 
+     197/    40F5 : 19                  	ADD 	HL,DE 
+     198/    40F6 : D8                  	RET	C		;UEBERLAUF 
+     199/    40F7 : 18 F8               	JR 	MULW1 
+     200/    40FF :                      	ORG 	$+6 
+     201/    40FF :                     ;
+     202/    40FF :                     ;16-BIT-DIVISION 
+     203/    40FF : EB                  DIVW 	EX 	DE,HL 
+     204/    4100 : 7A                  	LD 	A,D 
+     205/    4101 : B3                  	OR 	E 		;A=0, WENN DIV. DURCH 0 
+     206/    4102 : 28 0D               	JR	Z,DIVW0
+     207/    4104 : 01 FF FF            	LD 	BC,0FFFFH 	;ANF.WERT QUOTIENT 
+     208/    4107 : 03                  DIVW1 	INC 	BC 
+     209/    4108 : A7                  	AND 	A 		;CY:=0 
+     210/    4109 : ED 52               	SBC 	HL,DE 
+     211/    410B : 30 FA               	JR	NC,DIVW1 
+     212/    410D : 60                  	LD 	H,B
+     213/    410E : 69                  	LD 	L,C 		;QUOTIENT NACH HL 
+     214/    410F : A7                  	AND 	A 		;CY:=0
+     215/    4110 : C9                  	RET 
+     216/    4111 : 37                  DIVW0 	SCF 			;CY:=1,FEHLER 
+     217/    4112 : C9                  	RET 
+     218/    4119 :                      	ORG 	$+6 
+     219/    4119 :                     ;
+     220/    4119 :                     ;EINGABE, REGISTERTAUSCH 
+     221/    4119 : EB                  EINGAB 	EX 	DE,HL 
+     222/    411A : A7                  	AND 	A 		;CY:=0 
+     223/    411B : C9                  	RET 
+     224/    4122 :                      	ORG 	$+6 
+     225/    4122 :                     
+     226/    4122 :                     ;RESERVEFUNKTION 
+     227/    4122 : A7                  FREI 	AND 	A 		;CY:=0 
+     228/    4123 : C9                  	RET 
+     229/    4124 :                     
+     230/    4124 :                     	END	TARECH
+ AS V1.42 Beta [Bld 82] - source file POLY_TRECH.asm - page 5 - 4/23/2012 9:44:23
+
+
+  symbol table (* = unused):
+  ------------------------
+
+ ADDW :                        40D9 C |  ANZ :                         407F C |
+*ARCHITECTURE :  i386-unknown-win32 - | *BIGENDIAN :                      0 - |
+*BRANCHEXT :                      0 - | *CASESENSITIVE :                  0 - |
+*CONSTPI :        3.141592653589793 - | *DATE :                   4/23/2012 - |
+ DIVW :                        40FF C |  DIVW0 :                       4111 C |
+ DIVW1 :                       4107 C |  EINGAB :                      4119 C |
+*FALSE :                          0 - |  FE1 :                         40C7 C |
+ FEHLER :                      40BC C |  FREI :                        4122 C |
+*FULLPMMU :                       1 - |  FUNKAN :                       2AF - |
+*HAS64 :                          1 - | *HASDSP :                         0 - |
+*HASFPU :                         0 - | *HASPMMU :                        0 - |
+*INEXTMODE :                      0 - | *INLWORDMODE :                    0 - |
+*INMAXMODE :                      0 - | *INSRCMODE :                      0 - |
+*INSUPMODE :                      0 - |  KONSOL :                       14E - |
+ LISTE :                       40A0 C | *LISTON :                         1 - |
+ LO1 :                         4072 C |  LOANZ :                       406C C |
+*MACEXP :                         1 - | *MOMCPU :                        80 - |
+*MOMCPUNAME :                   Z80 - |  MULW :                        40EC C |
+ MULW1 :                       40F1 C | *NESTMAX :                      100 - |
+ OPAUSW :                      4087 C | *PACKING :                        0 - |
+*PADDING :                        1 - | *RELAXED :                        0 - |
+ SUBW :                        40E1 C |  TARE1 :                       40BA C |
+ TARECH :                      40AC C | *TIME :                     9:44:23 - |
+*TRUE :                           1 - | *VERSION :                     142F - |
+ ZAHL :                        4000 C |  ZAHL1 :                       4007 C |
+ ZAHL2 :                       400D C |  ZAHL3 :                       401B C |
+ ZAHL4 :                       4028 C |  ZAHL5 :                       403B C |
+ ZAHL6 :                       4062 C |  ZAHL7 :                       404D C |
+ ZAHL8 :                       4053 C |  ZAHLF :                       4063 C |
+ ZIFANZ :                       300 - |
+
+     59 symbols
+     28 unused symbols
+
+ AS V1.42 Beta [Bld 82] - source file POLY_TRECH.asm - page 6 - 4/23/2012 9:44:23
+
+
+  codepages:
+  ----------
+
+STANDARD (0 changed characters)
+
+
+0.03 seconds assembly time
+
+    231 lines source file
+      2 passes
+      0 errors
+      0 warnings

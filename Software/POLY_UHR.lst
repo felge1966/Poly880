@@ -1,0 +1,198 @@
+ AS V1.42 Beta [Bld 82] - source file POLY_UHR.asm - page 1 - 4/22/2012 19:19:26
+
+
+       1/       0 :                     ; POLY-COMPUTER 880
+       2/       0 :                     ;
+       3/       0 :                     ; 8.8.2. Programbeispiel-Unterbrechungsgesteuerte Digitaluhr 
+       4/       0 :                     ; Arbeitshandbuch, S. 169-176
+       5/       0 :                     ;
+       6/       0 :                     ; assemblieren mit Arnold-Assembler www.alfsembler.de
+       7/       0 :                     ; vp120210
+       8/       0 :                     ;
+       9/       0 :                     	cpu	z80
+      10/       0 :                     
+      11/       0 :                     ; PROGRAMM ZUR REALISIERUNG EINER
+      12/       0 :                     ; DIGITALUHR. MIT CTC-BENUTZUNG
+      13/       0 :                     ; STELLMOEGLICHKEIT MIT MONITOR
+      14/       0 :                     ;
+      15/       0 :                     ;UNTERBRECHUNGSBEHANDLUNGSPROGRAMM
+      16/    4000 :                     	ORG 	4000H
+      17/    4000 : F5                  UBR 	PUSH 	AF
+      18/    4001 : E5                  	PUSH 	HL 		;BENUTZTE REG. RETTEN
+      19/    4002 : 21 C0 40            	LD 	HL,HSEK
+      20/    4005 : 35                  	DEC 	(HL) 		;1/100S BINAER ZAEHLEN
+      21/    4006 : 20 23               	JR	NZ,UBR1
+      22/    4008 : 36 64               	LD 	(HL),100 	;UNTERSETZ.-FRKTOR
+      23/    400A : 23                  	INC 	HL 		;HL ZEIGT AUF SEK.
+      24/    400B : 7E                  	LD 	A,(HL)
+      25/    400C : C6 01               	ADD 	A,1 		;SEKUNDEN WEITERSCHALTEN
+      26/    400E : 27                  	DAA
+      27/    400F : 77                  	LD 	(HL),A
+      28/    4010 : D6 60               	SUB 	60H 		;60S ERREICHT ?
+      29/    4012 : 20 17               	JR	NZ,UBR1
+      30/    4014 : 77                  	LD 	(HL),A
+      31/    4015 : 23                  	INC 	HL
+      32/    4016 : 7E                  	LD 	A,(HL)
+      33/    4017 : C6 01               	ADD 	A,1 		;MINUTEN WEITERSCHALTEN
+      34/    4019 : 27                  	DAA
+      35/    401A : 77                  	LD 	(HL),A
+      36/    401B : D6 60               	SUB 	60H 		;60MIN ERREICHT ?
+      37/    401D : 20 0C               	JR	NZ,UBR1
+      38/    401F : 77                   	LD 	(HL),A
+      39/    4020 : 23                   	INC 	HL
+      40/    4021 : 7E                   	LD 	A,(HL)
+      41/    4022 : C6 01                	ADD 	A,1 		;STUNDEN WLITERSCHALTEN
+      42/    4024 : 27                   	DAA
+      43/    4025 : 77                   	LD 	(HL),A
+      44/    4026 : D6 24                	SUB 	24H 		;24 STUNDEN ERREICHT ?
+      45/    4028 : 20 01                	JR	NZ,UBR1
+      46/    402A : 77                   	LD 	(HL),A
+      47/    402B : E1                  UBR1 	POP 	HL
+      48/    402C : F1                   	POP 	AF 		;REG. WIEDERHERSTELLEN
+      49/    402D : FB                   	EI
+      50/    402E : ED 4D                	RETI
+      51/    4030 :                     
+      52/    4030 :                      ;HINTERGRUNDPROGPAMM
+      53/    4030 :                      ;CTC-PROGRAMMIERUNG
+      54/    4030 :                      ;ANZEIGEKONVEPTIERUNG
+      55/    4040 :                      	ORG 	4040H
+      56/    4040 : 3E 41               UHRPRO	LD 	A,41H
+      57/    4042 : ED 47                	LD 	I,A 		;I-REG. LADEN
+      58/    4044 : ED 5E                	IM	2
+      59/    4046 : 3E 00                	LD 	A,0 		;UBR.-VEKTOR FUER CTC
+      60/    4048 : D3 38                	OUT 	(38H),A		;IN KANAL 0 LADEN
+ AS V1.42 Beta [Bld 82] - source file POLY_UHR.asm - page 2 - 4/22/2012 19:19:26
+
+
+      61/    404A : 3E A7                	LD 	A,0A7H 		;KANALSTEUERWORT
+      62/    404C : D3 89                	OUT 	(89H),A
+      63/    404E : 3E 24               	LD 	A,24H 		;ZEITKONST. 36
+      64/    4050 : D3 89                	OUT 	(89H),A
+      65/    4052 : FB                   	EI
+      66/    4053 :                     ;ANZEIGESCHLEIFE
+      67/    4053 :                     ;STAENDIGE AFTUALiSIERUNU DER ANZEIGE
+      68/    4053 : 21 C3 40            ANZE 	LD 	HL,STUN
+      69/    4056 : AF                   	XOR  	A
+      70/    4057 : 01 20 41            	LD  	BC,ANZBER
+      71/    405A : 02                   	LD  	(BC),A
+      72/    405B : 03                  	INC	BC
+      73/    405C : 02                  	LD  	(BC),A 		;ERSTE 2 ANZEIGEN LOESCHEN
+      74/    405D : 03                   	INC  	BC
+      75/    405E : 7E                  	LD	A,(HL)  	;STUNDEN
+      76/    405F : CD 80 40             	CALL  	ANZKON
+      77/    4062 : 2B                   	DEC  	HL
+      78/    4063 : 7E                   	LD  	A,(HL) 		;MINUTEN
+      79/    4064 : CD 80 40            	CALL  	ANZKON
+      80/    4067 : 2B                   	DEC	HL
+      81/    4068 : 7E                   	LD	A,(HL) 		;SEKUNDEN
+      82/    4069 : CD 80 40            	CALL  	ANZKON
+      83/    406C : 11 20 41             	LD  	DE,ANZBER
+      84/    406F : CD 4E 01             	CALL  	KONSOL 		;ANZEIGE ANSTEUERN
+      85/    4072 : 18 DF                	JR  	ANZE
+      86/    4074 :                     ;
+      87/    4074 :                     ; UNTERPROGRAMM ZUM KONVERTIEREN
+      88/    4074 :                     ; EINES BYTES IN DIE 7-SEG.-ANZEIGE
+      89/    4074 :                     ;  EINGABE : ANZUZEIGENDES BYTE IN A
+      90/    4074 :                     ;  AUSGABE : ANZEIGESTELLEN (BC),(BC+1)
+      91/    4074 :                     ;                      BC := BC + 2
+      92/    4074 :                     ; VERAENDERTE REGISTER: AF,BC
+      93/    4080 :                     	ORG 	4080H
+      94/    4080 : E5                  ANZKON 	PUSH 	HL
+      95/    4081 : D5                  	PUSH  	DE
+      96/    4082 : 11 10 03             	LD  	DE,ANZDEC 	;7-SEG.-TABELLE
+      97/    4085 : F5                  	PUSH  	AF
+      98/    4086 : 0F                  	RRCA
+      99/    4087 : 0F                  	RRCA
+     100/    4088 : 0F                  	RRCA
+     101/    4089 : 0F                  	RRCA			;HOEHERWERT. HALBBYTE RECHTSBUENDIG
+     102/    408A : E6 0F               	AND  	0FH
+     103/    408C : 26 00               	LD	H,0
+     104/    408E : 6F                  	LD	L,A 		;HL -VERSATZ FUER TABELLE
+     105/    408F : 19                  	ADD  	HL,DE
+     106/    4090 : 7E                  	LD	A,(HL)		;7-SEG.-KODE
+     107/    4091 : E6 F7               	AND	0F7H 		;PUNKT LOESCHEN
+     108/    4093 : 02                  	LD  	(BC),A 		;IN  ANZEIGEBEREICH
+     109/    4094 : 03                  	INC  	BC
+     110/    4095 : F1                  	POP  	AF
+     111/    4096 : E6 0F               	AND  	0FH 		;NIEDERWERT. HALBBYTE
+     112/    4098 : 26 00               	LD	H,0
+     113/    409A : 6F                  	LD	L,A
+     114/    409B : 19                  	ADD  	HL,DE
+     115/    409C : 7E                  	LD	A,(HL)
+     116/    409D : 02                  	LD	(BC),A
+     117/    409E : 03                  	INC	BC
+     118/    409F : D1                  	POP  	DE
+     119/    40A0 : E1                  	POP  	HL
+     120/    40A1 : C9                  	RET
+ AS V1.42 Beta [Bld 82] - source file POLY_UHR.asm - page 3 - 4/22/2012 19:19:26
+
+
+     121/    40A2 :                     
+     122/    40A2 :                     ;SPEICHERSTELLEN
+     123/    40C0 :                     	ORG	40C0H
+     124/    40C0 : 00                  HSEK	DB	0
+     125/    40C1 : 00                  SEK	DB	0
+     126/    40C2 : 00                  MIN	DB	0
+     127/    40C3 : 00                  STUN 	DB 	0
+     128/    40C4 :                     ;
+     129/    40C4 :                     ;TABELLE DER UNTERBRECHUNGSPROGRAMME
+     130/    4100 :                     	ORG 	4100H
+     131/    4100 : 00 00               UBRTAB 	DW 	0
+     132/    4102 : 00 40               	DW 	4000H 		;BENUTZTER KANAL 1
+     133/    4104 : 00 00               	DW	0
+     134/    4106 : 00 00               	DW 	0
+     135/    4108 :                     ;
+     136/    4108 :                     ;BEREICH FUER ANZEIGEBELEGUNG
+     137/    4108 : =4120H              ANZBER 	EQU 	4120H 		;ANZEIGEBEREICH IM RAM
+     138/    4108 :                     ;
+     139/    4108 :                     ;BENUTZTE PROGRAMME UND BEREICHE
+     140/    4108 :                     ;DES MONITORPROGRAMMS
+     141/    4108 : =14EH               KONSOL 	EQU 	14EH 		;ANZEIGEANSTEUERPROG.
+     142/    4108 : =310H               ANZDEC 	EQU 	310H 		;7-SEG.-KODETABELLE
+     143/    4108 :                     	END	UHRPRO
+ AS V1.42 Beta [Bld 82] - source file POLY_UHR.asm - page 4 - 4/22/2012 19:19:26
+
+
+  symbol table (* = unused):
+  ------------------------
+
+ ANZBER :                      4120 - |  ANZDEC :                       310 - |
+ ANZE :                        4053 C |  ANZKON :                      4080 C |
+*ARCHITECTURE :  i386-unknown-win32 - | *BIGENDIAN :                      0 - |
+*BRANCHEXT :                      0 - | *CASESENSITIVE :                  0 - |
+*CONSTPI :        3.141592653589793 - | *DATE :                   4/22/2012 - |
+*FALSE :                          0 - | *FULLPMMU :                       1 - |
+*HAS64 :                          1 - | *HASDSP :                         0 - |
+*HASFPU :                         0 - | *HASPMMU :                        0 - |
+ HSEK :                        40C0 C | *INEXTMODE :                      0 - |
+*INLWORDMODE :                    0 - | *INMAXMODE :                      0 - |
+*INSRCMODE :                      0 - | *INSUPMODE :                      0 - |
+ KONSOL :                       14E - | *LISTON :                         1 - |
+*MACEXP :                         1 - | *MIN :                         40C2 C |
+*MOMCPU :                        80 - | *MOMCPUNAME :                   Z80 - |
+*NESTMAX :                      100 - | *PACKING :                        0 - |
+*PADDING :                        1 - | *RELAXED :                        0 - |
+*SEK :                         40C1 C |  STUN :                        40C3 C |
+*TIME :                    19:19:26 - | *TRUE :                           1 - |
+*UBR :                         4000 C |  UBR1 :                        402B C |
+*UBRTAB :                      4100 C |  UHRPRO :                      4040 C |
+*VERSION :                     142F - |
+
+     41 symbols
+     32 unused symbols
+
+ AS V1.42 Beta [Bld 82] - source file POLY_UHR.asm - page 5 - 4/22/2012 19:19:26
+
+
+  codepages:
+  ----------
+
+STANDARD (0 changed characters)
+
+
+0.03 seconds assembly time
+
+    144 lines source file
+      2 passes
+      0 errors
+      0 warnings

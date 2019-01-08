@@ -1,0 +1,115 @@
+ AS V1.42 Beta [Bld 82] - source file L_S_TTY_TEST.asm - page 1 - 4/10/2012 12:39:23
+
+
+       1/       0 :                     ; POLY-COMPUTER 880
+       2/       0 :                     ;
+       3/       0 :                     ; 11. Prüfprogramme für den POLY-COMPUTER
+       4/       0 :                     ; Bedienhandbuch, S. 67-79
+       5/       0 :                     ;
+       6/       0 :                     ; assemblieren mit Arnold-Assembler www.alfsembler.de
+       7/       0 :                     ; vp120210
+       8/       0 :                     ;
+       9/       0 :                     	cpu	z80
+      10/       0 :                     
+      11/       0 :                     ;*************************************************************************
+      12/       0 :                     ;
+      13/       0 :                     ; 	TESTPROGRAMM FUER FERNSCHREIBERANSCHLUSS
+      14/       0 :                     ;
+      15/       0 :                     ;*************************************************************************
+      16/       0 :                     ;
+      17/       0 :                     ;	STRATEGIE: DAS TESTPROGRAMM ERZEUGT STATISCH DIE DREI MOEGLICHEN
+      18/       0 :                     ;	ZUSTAENDE AM FERNSCHREIBERANSCHLUSS, DER UEBERGANG
+      19/       0 :                     ;	ZUM NAECHSTEN ZUSTAND ERFOLGT DURCH BETAETIGUNG DER
+      20/       0 :                     ;	TASTE "EXEC". IN DER ANZEIGEEINHEIT WIRD DER BESTEHENDE
+      21/       0 :                     ;	ZUSTAND DARGESTELLT: O1 = AUSGABE HOCH
+      22/       0 :                     ;			     O0 = AUSGABE TIEF
+      23/       0 :                     ;			     IX = EINGABE HOCH/TIEF
+      24/       0 :                     ;
+      25/       0 :                     ;*************************************************************************
+      26/    4000 :                     	ORG 	4000H
+      27/    4000 : 3E CF               LSFS1 	LD 	A,0CFH		; PIO AUF AUSGABE
+      28/    4002 : D3 83                	OUT 	PIOC2,A
+      29/    4004 : DB 82                	IN 	A,PIOD2
+      30/    4006 : CB C7                	SET 	0,A
+      31/    4008 : D3 82                	OUT 	PIOD2,A		; AUSGABE HOCH
+      32/    400A : 3E BA                	LD 	A,0BAH
+      33/    400C : D3 83                	OUT 	PIOC2,A
+      34/    400E : 11 84 E7             	LD 	DE,0E784H 	; IN ANZEIGE: O1 = AUSGABE HOCH
+      35/    4011 : CD AC 02             	CALL 	KOMDAR
+      36/    4014 : CD 4B 01            LSFS2 	CALL 	TASTU
+      37/    4017 : FE 41                	CP 	41H 		; KODE "EXEC"
+      38/    4019 : 20 F9                	JR	NZ,LSFS2
+      39/    401B : DB 82                	IN  	A,PIOD2
+      40/    401D : CB 87                	RES 	0,A
+      41/    401F : D3 82               	OUT  	PIOD2,A  	; AUSGABE TIEF
+      42/    4021 : 11 E7 E7            	LD  	DE,0E7E7H  	; IN ANZEIGE: O0 = AUSGABE TIEF
+      43/    4024 : CD AC 02            	CALL  	KOMDAR
+      44/    4027 : CD 4B 01            LSFS3  	CALL  	TASTU
+      45/    402A : FE 41               	CP  	41H
+      46/    402C : 20 F9                	JR	NZ,LSFS3  	; AUF "EXEC" WARTEN
+      47/    402E : 3E CF                	LD  	A,0CFH
+      48/    4030 : D3 83                	OUT  	PIOC2,A
+      49/    4032 : 3E BB                	LD  	A,0BBH  	; PIO AUF EINGABE
+      50/    4034 : D3 83                	OUT  	PIOC2,A
+      51/    4036 : DB 82               LSFS4  	IN  	A,PIOD2
+      52/    4038 : CB 47                	BIT  	0,A
+      53/    403A : 11 E7 41             	LD  	DE,41E7H  	; I 0 IN ANZEIGE (EINGABE TIEF)
+      54/    403D : 28 02                	JR	Z,LSFS5
+      55/    403F : 1E 84                	LD  	E,84H  		; I 1 IN ANZEIGE (EINGABE HOCH)
+      56/    4041 : CD AC 02            LSFS5  	CALL  	KOMDAR
+      57/    4044 : CD 4B 01             	CALL  	TASTU
+      58/    4047 : FE 41                	CP  	41H
+      59/    4049 : 20 EB                	JR	NZ,LSFS4  	; AUF "EXEC" WARTEN UND EINGABE DARSTELLEN
+      60/    404B : C3 00 40             	JP  	LSFS1
+ AS V1.42 Beta [Bld 82] - source file L_S_TTY_TEST.asm - page 2 - 4/10/2012 12:39:23
+
+
+      61/    404E : =2ACH               KOMDAR  EQU  	02ACH
+      62/    404E : =14BH               TASTU  	EQU  	014BH
+      63/    404E : =82H                PIOD2  	EQU  	82H
+      64/    404E : =83H                PIOC2  	EQU  	83H
+      65/    404E :                      	END
+ AS V1.42 Beta [Bld 82] - source file L_S_TTY_TEST.asm - page 3 - 4/10/2012 12:39:23
+
+
+  symbol table (* = unused):
+  ------------------------
+
+*ARCHITECTURE :  i386-unknown-win32 - | *BIGENDIAN :                      0 - |
+*BRANCHEXT :                      0 - | *CASESENSITIVE :                  0 - |
+*CONSTPI :        3.141592653589793 - | *DATE :                   4/10/2012 - |
+*FALSE :                          0 - | *FULLPMMU :                       1 - |
+*HAS64 :                          1 - | *HASDSP :                         0 - |
+*HASFPU :                         0 - | *HASPMMU :                        0 - |
+*INEXTMODE :                      0 - | *INLWORDMODE :                    0 - |
+*INMAXMODE :                      0 - | *INSRCMODE :                      0 - |
+*INSUPMODE :                      0 - |  KOMDAR :                       2AC - |
+*LISTON :                         1 - |  LSFS1 :                       4000 C |
+ LSFS2 :                       4014 C |  LSFS3 :                       4027 C |
+ LSFS4 :                       4036 C |  LSFS5 :                       4041 C |
+*MACEXP :                         1 - | *MOMCPU :                        80 - |
+*MOMCPUNAME :                   Z80 - | *NESTMAX :                      100 - |
+*PACKING :                        0 - | *PADDING :                        1 - |
+ PIOC2 :                         83 - |  PIOD2 :                         82 - |
+*RELAXED :                        0 - |  TASTU :                        14B - |
+*TIME :                    12:39:23 - | *TRUE :                           1 - |
+*VERSION :                     142F - |
+
+     37 symbols
+     28 unused symbols
+
+ AS V1.42 Beta [Bld 82] - source file L_S_TTY_TEST.asm - page 4 - 4/10/2012 12:39:23
+
+
+  codepages:
+  ----------
+
+STANDARD (0 changed characters)
+
+
+0.04 seconds assembly time
+
+     66 lines source file
+      2 passes
+      0 errors
+      0 warnings

@@ -1,0 +1,566 @@
+ AS V1.42 Beta [Bld 82] - source file EINTRITT.asm - page 1 - 4/23/2012 11:09:41
+
+
+       1/       0 :                     ;*************************************************************************
+       2/       0 :                     ;
+       3/       0 :                     ; 	PROGRAMM: U880-MONITOR
+       4/       0 :                     ;
+       5/       0 :                     ; 	COPYRIGHT (C) 1982
+       6/       0 :                     ; 	VEB KOMBINAT POLYTECHNIK UND PRAEZISIONSGERRETE
+       7/       0 :                     ; 	DDR-9023 KARL-MARX-STADT
+       8/       0 :                     ;	MELANCHTHONSTRASSE 4-8
+       9/       0 :                     ;
+      10/       0 :                     ;*************************************************************************
+      11/       0 :                     ;
+      12/       0 :                     ;
+      13/       0 :                     ; INHALT
+      14/       0 :                     ; ======
+      15/       0 :                     ;
+      16/       0 :                     ; DIESES PROGRAMM LAEUFT AUF DEM U880-LERNSYSTEM POLY-COMPUTER 880 DES
+      17/       0 :                     ; VEB POLYTECHNIK UND STELLT DEM NUTZER EINEN KLEINEN MONITOR ZUR UNTER-
+      18/       0 :                     ; STUETZUNG DER PROGRAMMERSTELLUNG ZUR VERFUEGUNG. DAS PROGRAMM ERMOEG-
+      19/       0 :                     ; LICHT ES, UEBER DIE TASTATUR DES LERNSYSTEMS DEN SPEICHER- ODER DEN
+      20/       0 :                     ; REGISTERINHALT ZU UEBERPRUEFEN UND ZU VERAENDERN, EIN PROGRAMM IN DEN
+      21/       0 :                     ; RAM ZU LADEN UND DIESES AUSZUFUEHREN. DIE PROGRAMMTESTUNG WIRD DURCH
+      22/       0 :                     ; EINZELSCHRITTBETRIEB UND BELIEBIG VIELE SOFTWAREPRUEFPUNKTE UNTER-
+      23/       0 :                     ; STUETZT. DATEN KOENNEN AUF EIN MAGNETBANDGERAET AUSGEGEBEN UND VON
+      24/       0 :                     ; DIESEM EINGELESEN WERDEN. IM RAM KOENNEN BEREICHE VERSCHOBEN UND MIT
+      25/       0 :                     ; EINEM DATENMUSTER GEFUELLT WERDEN. DER MONITOR GESTATTET DEN ZUGRIFF
+      26/       0 :                     ; ZU  ALLEN EIN- UND AUSGABEPORTS. DER NUTZER DES SYSTEMS KANN UNTERPRO-
+      27/       0 :                     ; GRAMME ZUR ANSTEUERUNG DER TASTATUR UND DER ANZEIGEEINHEIT DES LERN-
+      28/       0 :                     ; SYSTEMS VERWENDEN, DIE IM MONITORPROGRAMM ENTHALTEN SIND.
+      29/       0 :                     ; DIE VERWENDUNG VON UNTERBRECHUNGEN IST IN ALLEN 3 BETRIEBSARTEN DES
+      30/       0 :                     ; U880 MOEGLICH. NMI IST FUER SYSTEMFUNKTIONEN RESERVIERT.
+      31/       0 :                     ;
+      32/       0 :                     ;
+      33/       0 :                     ; PROGRAMMORGANISATION
+      34/       0 :                     ; ====================
+      35/       0 :                     ;
+      36/       0 :                     ; DAS GESAMTE MONITORPROGRAMM BESTEHT AUS 4 MODULEN. DAS EINTRITTSPRO-
+      37/       0 :                     ; GRAMM BEHANDELT ALLE SINNVOLLEN EINTRITTE IN DAS MONITORPROGRAMM VON
+      38/       0 :                     ; ANWENDERPROGRAMMEN (EINZELSCHRITTBETRIEB, PRUEFPUNKT) ODER NACH RESET.
+      39/       0 :                     ; DAS KONSOLPROGRAMM ERKENNT DIE BETRETIGUNG VON TASTEN UND RUFT ENT-
+      40/       0 :                     ; SPRECHENDE BEARBEITUNGSPROGRAMME AUF. WAEHREND DES WARTENS AUF EINE
+      41/       0 :                     ; EINGABE WIRD DIE ANZEIGEEINHEIT STAENDIG AUFGEFRISCHT. IM AKTIONSPRO-
+      42/       0 :                     ; GRAMM SIND ALLE ROUTINEN ENTHALTEN, DIE DIE EIGENTLICHE REALISIERUNG
+      43/       0 :                     ; DER FUNKTIONEN BEWIRKEN. DAS RAMPROGRAMM ENTHAELT DEFINITIONEN, DIE
+      44/       0 :                     ; SPEICHERPLAETZE FUER DIE ARBEIT DES MONITORS RESERVIEREN.
+      45/       0 :                     ; DAS MONITORPROGRAMM BELEGT 2K BYTE ROM AUF DEN ADRESSEN 0-3FFH UND
+      46/       0 :                     ; 1000H-13FFH. DIESE AUFTEILUNG GESTATTET DIE VERWENDUNG EINES EIN-
+      47/       0 :                     ; FACHEREN ADRESSDEKODERS. WEITERHIN WIRD DURCH DEN MONITOR DER RAMBE-
+      48/       0 :                     ; REICH 43A0H-43FFH BELEGT. ZUSAETZLICH ZU DEN AUFGEZAEHLTEN PROGRAMMEN
+      49/       0 :                     ; EXISTIERT EINE QUELLDATEI, DIE EINE ANZAHL VON WERTZUWEISUNGEN ENT-
+      50/       0 :                     ; HAELT UND DIE VON ALLEN PROGRAMMEN ALS REFERENZ BENUTZT WIRD.
+      51/       0 :                     ;
+      52/       0 :                     ;*E
+      53/       0 :                     ;*************************************************************************
+      54/       0 :                     ;
+      55/       0 :                     ; 	EINTRITTSPROGRAMM
+      56/       0 :                     ;
+      57/       0 :                     ;*************************************************************************
+      58/       0 :                     ;
+      59/       0 :                     ; 	FUNKTION: BEARBEITET ALLE EINTRITTE IN DAS
+      60/       0 :                     ; 		  MONITORPROGRAMM
+ AS V1.42 Beta [Bld 82] - source file EINTRITT.asm - page 2 - 4/23/2012 11:09:41
+
+
+      61/       0 :                     ; 	EINGABEN: NMIZUS
+      62/       0 :                     ; 	AUSGABEN: NMIZUS,PROGZU,VERZWEIGT ZU KONSOL-
+      63/       0 :                     ;		  PROGRAMM
+> > >EINTRITT.asm(64): error: unknown opcode
+      64/       0 :                      	EXTERNAL USERSP SYSTSP ANZBER USSP2
+> > >EINTRITT.asm(65): error: unknown opcode
+      65/       0 :                      	EXTERNAL BREAKP RAMANF
+> > >EINTRITT.asm(66): error: unknown opcode
+      66/       0 :                      	EXTERNAL HR1 NMIZUS TRST KOMDAR
+> > >EINTRITT.asm(67): error: unknown opcode
+      67/       0 :                      	EXTERNAL ADRAUS DAAUS
+> > >EINTRITT.asm(68): error: unknown opcode
+      68/       0 :                      	EXTERNAL HR4 SYSP24 SYSP26
+> > >EINTRITT.asm(69): error: unknown opcode
+      69/       0 :                      	EXTERNAL Z10EM4
+      70/       0 :                     ;*************************************************************************
+      71/       0 :                     ;
+      72/       0 :                     ;	RESET-EINTRITTSPUNKT
+      73/       0 :                     ;
+      74/       0 :                     ;*************************************************************************
+> > >EINTRITT.asm(75): error: invalid symbol name
+      75/       0 :                     	ORG 	0000H
+> > >EINTRITT.asm(76): error: unknown opcode
+      76/       0 :                     	LD 	SP,USSP2 	; SP FUER ANWENDER
+> > >EINTRITT.asm(77): error: unknown opcode
+      77/       0 :                     	LD 	BC,PZAHL 	; RAM  INITIALISIEREN
+> > >EINTRITT.asm(78): error: unknown opcode
+      78/       0 :                     	LD 	HL,IWERTE 	; WERT-TABELLE
+> > >EINTRITT.asm(79): error: unknown opcode
+      79/       0 :                     	LD 	DE,ANZBER 	; RAM-BEREICH
+> > >EINTRITT.asm(80): error: unknown opcode
+      80/       0 :                     	LDIR 			; RAMINITIALISIERUNG
+> > >EINTRITT.asm(81): error: unknown opcode
+      81/       0 :                     	LD 	A,0FH 		;  KODE FUER OUTPUTMODE
+> > >EINTRITT.asm(82): error: unknown opcode
+      82/       0 :                     	OUT 	(PIOC1),A	; PIO1 PROGRAMMIEREN (SEGMENTANSTEUERUNG)
+> > >EINTRITT.asm(83): error: unknown opcode
+      83/       0 :                     	LD 	BC,300H OR PIOC2
+> > >EINTRITT.asm(84): error: unknown opcode
+      84/       0 :                     	OTIR 			; PIO2 PROGRAMMIEREN (BITMODE)
+> > >EINTRITT.asm(85): error: unknown opcode
+      85/       0 :                     	LD 	A,01H 		; ANFANGSDRTEN PIO2
+> > >EINTRITT.asm(86): error: unknown opcode
+      86/       0 :                     	OUT 	(PIOD2),A 	; DATENAUSGABE
+> > >EINTRITT.asm(87): error: unknown opcode
+      87/       0 :                     MONRM1 	LD 	A,05H 		; KODE FUER CTC (TIMER)
+> > >EINTRITT.asm(88): error: unknown opcode
+      88/       0 :                      	OUT 	(CTC),A 	; CTC STARTEN
+> > >EINTRITT.asm(89): error: unknown opcode
+      89/       0 :                      	LD 	A,5 		; ZAEHLKONSTANTE
+> > >EINTRITT.asm(90): error: unknown opcode
+      90/       0 :                      	OUT 	(CTC),A
+> > >EINTRITT.asm(91): error: unknown opcode
+      91/       0 :                      	POP 	AF
+> > >EINTRITT.asm(92): error: unknown opcode
+      92/       0 :                      	JR 	$ 		; WARTEN
+      93/       0 :                     ;*************************************************************************
+      94/       0 :                     ;
+      95/       0 :                     ; 	EINTRITT 	FUER RESTART 5
+      96/       0 :                     ;
+ AS V1.42 Beta [Bld 82] - source file EINTRITT.asm - page 3 - 4/23/2012 11:09:41
+
+
+      97/       0 :                     ;*************************************************************************
+> > >EINTRITT.asm(98): error: invalid symbol name
+      98/       0 :                      	ORG 	28H
+> > >EINTRITT.asm(99): error: unknown opcode
+      99/       0 :                      	PUSH 	AF
+> > >EINTRITT.asm(100): error: unknown opcode
+     100/       0 :                      	LD 	A,01H
+> > >EINTRITT.asm(101): error: unknown opcode
+     101/       0 :                      	LD 	(NMIZUS),A 	; URSACHE EINTRITT MERK.
+> > >EINTRITT.asm(102): error: unknown opcode
+     102/       0 :                      	JR 	MONRM1
+     103/       0 :                     ;*************************************************************************
+     104/       0 :                     ;
+     105/       0 :                     ; 	EINTRITT 	FUER RESTART 6
+     106/       0 :                     ;
+     107/       0 :                     ;*************************************************************************
+> > >EINTRITT.asm(108): error: invalid symbol name
+     108/       0 :                      	ORG 	30H
+> > >EINTRITT.asm(109): error: unknown opcode
+     109/       0 :                      	PUSH 	AF
+> > >EINTRITT.asm(110): error: unknown opcode
+     110/       0 :                       	LD 	A, 02H 		; URSACHE=PR.PUNKT
+> > >EINTRITT.asm(111): error: unknown opcode
+     111/       0 :                      	LD 	(NMIZUS),A
+> > >EINTRITT.asm(112): error: unknown opcode
+     112/       0 :                      	JR 	MONRM1
+     113/       0 :                     ;*************************************************************************
+     114/       0 :                     ; 
+     115/       0 :                     ;	EINTRITTSPUNKT FUER INTERRUPTMODE 0 UND 1
+     116/       0 :                     ;
+     117/       0 :                     ;*************************************************************************
+> > >EINTRITT.asm(118): error: invalid symbol name
+     118/       0 :                      	ORG 	38H
+> > >EINTRITT.asm(119): error: unknown opcode
+     119/       0 :                      	JP 	RAMANF
+     120/       0 :                     ;*************************************************************************
+> > >EINTRITT.asm(121): error: unknown opcode
+     121/       0 :                     NMIM1 	LD 	(HR1),SP 	; SP ABSPEICHERN
+> > >EINTRITT.asm(122): error: unknown opcode
+     122/       0 :                      	LD 	SP,SYSTSP 	; SYSTEMSTACKPOINTER
+> > >EINTRITT.asm(123): error: unknown opcode
+     123/       0 :                      	PUSH 	AF 		; ERSTER REGISTERSATZ
+> > >EINTRITT.asm(124): error: unknown opcode
+     124/       0 :                      	PUSH 	BC
+> > >EINTRITT.asm(125): error: unknown opcode
+     125/       0 :                      	PUSH 	DE
+> > >EINTRITT.asm(126): error: unknown opcode
+     126/       0 :                      	PUSH 	HL
+> > >EINTRITT.asm(127): error: unknown opcode
+     127/       0 :                      	EXAF 			; ZWEITER REGISTERSATZ
+> > >EINTRITT.asm(128): error: unknown opcode
+     128/       0 :                      	EXX
+> > >EINTRITT.asm(129): error: unknown opcode
+     129/       0 :                      	PUSH 	AF 		; REGISTER ABSPEICHERN
+> > >EINTRITT.asm(130): error: unknown opcode
+     130/       0 :                      	PUSH 	BC
+> > >EINTRITT.asm(131): error: unknown opcode
+     131/       0 :                      	PUSH 	DE
+> > >EINTRITT.asm(132): error: unknown opcode
+     132/       0 :                      	PUSH 	HL
+ AS V1.42 Beta [Bld 82] - source file EINTRITT.asm - page 4 - 4/23/2012 11:09:41
+
+
+> > >EINTRITT.asm(133): error: unknown opcode
+     133/       0 :                      	LD 	A,I 		; INTERRUPTREG. UND EI
+> > >EINTRITT.asm(134): error: unknown opcode
+     134/       0 :                      	LD 	B, A
+> > >EINTRITT.asm(135): error: unknown opcode
+     135/       0 :                      	LD 	C,01H
+> > >EINTRITT.asm(136): error: unknown opcode
+     136/       0 :                      	JP	E,NMIM2
+> > >EINTRITT.asm(137): error: unknown opcode
+     137/       0 :                      	LD 	C,00H 		; EI=0
+> > >EINTRITT.asm(138): error: unknown opcode
+     138/       0 :                     NMIM2 	PUSH 	BC 		; I UND EI ABSPEICHERN
+> > >EINTRITT.asm(139): error: unknown opcode
+     139/       0 :                      	PUSH 	IX
+> > >EINTRITT.asm(140): error: unknown opcode
+     140/       0 :                      	PUSH 	IY
+> > >EINTRITT.asm(141): error: unknown opcode
+     141/       0 :                      	LD 	HL,(HR1) 	; SP HOLEN
+> > >EINTRITT.asm(142): error: unknown opcode
+     142/       0 :                      	LD 	E, (HL) 	; PC VOM STACK HOLEN
+> > >EINTRITT.asm(143): error: unknown opcode
+     143/       0 :                      	INC 	HL
+> > >EINTRITT.asm(144): error: unknown opcode
+     144/       0 :                      	LD 	D,(HL)
+> > >EINTRITT.asm(145): error: unknown opcode
+     145/       0 :                      	INC 	HL
+> > >EINTRITT.asm(146): error: unknown opcode
+     146/       0 :                      	PUSH 	HL 		; SP ABSPEICHERN
+> > >EINTRITT.asm(147): error: unknown opcode
+     147/       0 :                      	PUSH 	DE 		; PC ABSPEICHERN
+> > >EINTRITT.asm(148): error: unknown opcode
+     148/       0 :                      	JR 	NMIM3
+     149/       0 :                     ;*************************************************************************
+     150/       0 :                     ;
+     151/       0 :                     ;	EINTRITT 	BEI NMI
+     152/       0 :                     ;
+     153/       0 :                     ;*************************************************************************
+> > >EINTRITT.asm(154): error: invalid symbol name
+     154/       0 :                     	ORG 	66H
+> > >EINTRITT.asm(155): error: unknown opcode
+     155/       0 :                      	JR 	NMIM1
+     156/       0 :                     ;*************************************************************************
+> > >EINTRITT.asm(157): error: unknown opcode
+     157/       0 :                     NMIM3 	LD 	A,03H
+> > >EINTRITT.asm(158): error: unknown opcode
+     158/       0 :                      	OUT 	(CTC),A 	; CTC STOPPEN
+> > >EINTRITT.asm(159): error: unknown opcode
+     159/       0 :                      	LD 	IY,ANZBER 	; STAENDIGER ZEIGER
+> > >EINTRITT.asm(160): error: unknown opcode
+     160/       0 :                      	LD 	B,41H 		; SCON AUF HOCH
+> > >EINTRITT.asm(161): error: unknown opcode
+     161/       0 :                      	OUT 	(PIOD2),A 	; FF1 LOESCHEN
+> > >EINTRITT.asm(162): error: unknown opcode
+     162/       0 :                      	LD 	HL,(BREAKP)
+> > >EINTRITT.asm(163): error: unknown opcode
+     163/       0 :                      	LD 	A,(HR4) 	; BEFEHLSKODE
+> > >EINTRITT.asm(164): error: unknown opcode
+     164/       0 :                      	LD 	(HL),A
+> > >EINTRITT.asm(165): error: unknown opcode
+     165/       0 :                      	LD 	A,(NMIZUS)	; EINTRITTSURSACHE
+ AS V1.42 Beta [Bld 82] - source file EINTRITT.asm - page 5 - 4/23/2012 11:09:41
+
+
+> > >EINTRITT.asm(166): error: unknown opcode
+     166/       0 :                      	DEC 	A
+> > >EINTRITT.asm(167): error: unknown opcode
+     167/       0 :                      	JR	Z,ERSYST 	; SYSTEMPRUEFPUNKT
+> > >EINTRITT.asm(168): error: unknown opcode
+     168/       0 :                     	DEC  	A
+> > >EINTRITT.asm(169): error: unknown opcode
+     169/       0 :                     	JR	Z,BRUSER  	; ANWENDERPRUEFPUNKT
+> > >EINTRITT.asm(170): error: unknown opcode
+     170/       0 :                     	DEC  	A
+> > >EINTRITT.asm(171): error: unknown opcode
+     171/       0 :                     	JR	Z,NORST  	; EINZELSCHRITT
+> > >EINTRITT.asm(172): error: unknown opcode
+     172/       0 :                     	DEC  	A
+> > >EINTRITT.asm(173): error: unknown opcode
+     173/       0 :                     	JR	Z,BREST  	; SCHRITT NACH PRUEFP.
+> > >EINTRITT.asm(174): error: unknown opcode
+     174/       0 :                     	DEC  	A
+> > >EINTRITT.asm(175): error: unknown opcode
+     175/       0 :                     	JR	Z,JPTRST  	; RESET
+> > >EINTRITT.asm(176): error: unknown opcode
+     176/       0 :                     MONINT  LD  	DE,ANMON  	; MONITORTASTE
+> > >EINTRITT.asm(177): error: unknown opcode
+     177/       0 :                     	JR  	BRUSM1
+> > >EINTRITT.asm(178): error: unknown opcode
+     178/       0 :                     BRSYST  CALL  	SPPCKO  	; KORREKTUR SP UND PC
+> > >EINTRITT.asm(179): error: unknown opcode
+     179/       0 :                     	DEC  	DE  		; PC STELLEN
+> > >EINTRITT.asm(180): error: unknown opcode
+     180/       0 :                     	LD  	(SYSP26),DE  	; PC ABSPEICHERN
+> > >EINTRITT.asm(181): error: unknown opcode
+     181/       0 :                     	LD  	(IY+NMIZ),4  	; ZUSTAND MERKEN
+> > >EINTRITT.asm(182): error: unknown opcode
+     182/       0 :                     	JP  	Z10EM4  	; ANSPRUNG STEP
+> > >EINTRITT.asm(183): error: unknown opcode
+     183/       0 :                     BRUSER  CALL  	SPPCKO  	; ANWENDERPRUEFPUNKT
+> > >EINTRITT.asm(184): error: unknown opcode
+     184/       0 :                     	LD  	DE,ANUSBR
+> > >EINTRITT.asm(185): error: unknown opcode
+     185/       0 :                     BRUSM1  CALL  	KOMDAR  	; DATEN NACH ANZ.BEREICH
+> > >EINTRITT.asm(186): error: unknown opcode
+     186/       0 :                     NORST  	LD  	HL,(SYSP26)  	; PC
+> > >EINTRITT.asm(187): error: unknown opcode
+     187/       0 :                     	PUSH  	HL
+> > >EINTRITT.asm(188): error: unknown opcode
+     188/       0 :                     	CALL  	ADRAUS  	; ADR. IN ANZEIGE
+> > >EINTRITT.asm(189): error: unknown opcode
+     189/       0 :                     	POP  	HL
+> > >EINTRITT.asm(190): error: unknown opcode
+     190/       0 :                     	RES  	BIA,(IY+5)
+> > >EINTRITT.asm(191): error: unknown opcode
+     191/       0 :                     	LD  	H,(HL)  	; DATEN IN ANZEIGE
+> > >EINTRITT.asm(192): error: unknown opcode
+     192/       0 :                     	CALL  	DAAUS
+> > >EINTRITT.asm(193): error: unknown opcode
+     193/       0 :                     	RES  	BIA,(IY+7)
+> > >EINTRITT.asm(194): error: unknown opcode
+     194/       0 :                     JPTRST  JP  	TAST  		; TASTATUR ANSPRINGEN
+> > >EINTRITT.asm(195): error: unknown opcode
+     195/       0 :                     BREST  	LD  	DE,ANBREA  	; KODE FUER BREAK
+ AS V1.42 Beta [Bld 82] - source file EINTRITT.asm - page 6 - 4/23/2012 11:09:41
+
+
+> > >EINTRITT.asm(196): error: unknown opcode
+     196/       0 :                     	JR 	BRUSM1
+     197/       0 :                     ;*************************************************************************
+     198/       0 :                     ;
+     199/       0 :                     ; 	FUNKTION: KORRIGIERT SP UND PC
+     200/       0 :                     ; 	EINGABE: KEINE
+     201/       0 :                     ; 	AUSGABE: SYSP-24
+     202/       0 :                     ; 		  SYSP-26
+     203/       0 :                     ; 	ZERSTOERT: DE,HL
+     204/       0 :                     ;
+     205/       0 :                     ;*************************************************************************
+> > >EINTRITT.asm(206): error: unknown opcode
+     206/       0 :                     SPPCKO 	LD 	HL,(SYSP24) 	; SP LADEN
+> > >EINTRITT.asm(207): error: unknown opcode
+     207/       0 :                      	LD 	E,(HL) 		; PC HOLEN
+> > >EINTRITT.asm(208): error: unknown opcode
+     208/       0 :                      	INC 	HL
+> > >EINTRITT.asm(209): error: unknown opcode
+     209/       0 :                      	LD 	D,(HL)
+> > >EINTRITT.asm(210): error: unknown opcode
+     210/       0 :                      	INC 	HL
+> > >EINTRITT.asm(211): error: unknown opcode
+     211/       0 :                      	LD 	(SY5P24),HL 	; SP ABSPEICHERN
+> > >EINTRITT.asm(212): error: unknown opcode
+     212/       0 :                      	LD 	(SYSP26),DE 	; PC ABSPEICHERN
+> > >EINTRITT.asm(213): error: unknown opcode
+     213/       0 :                      	RET
+     214/       0 :                     ;*E
+     215/       0 :                     ;*************************************************************************
+     216/       0 :                     ;
+     217/       0 :                     ; 	DEFINITIONEN
+     218/       0 :                     ;
+     219/       0 :                     ;*************************************************************************
+> > >EINTRITT.asm(220): error: invalid symbol name
+     220/       0 : =???                ANBREA 	EQU 	5711H
+> > >EINTRITT.asm(221): error: invalid symbol name
+     221/       0 : =???                ANMON 	EQU 	0E557H
+> > >EINTRITT.asm(222): error: invalid symbol name
+     222/       0 : =???                ANUSBR 	EQU 	0C757H
+> > >EINTRITT.asm(223): error: invalid symbol name
+     223/       0 : =???                IOBITS 	EQU 	10111011B
+> > >EINTRITT.asm(224): error: wrong number of operands
+> > >EINTRITT.asm(224): error: unknown opcode
+     224/       0 :                     IWERTE 	DB 	0F1H 		; ANFANGSWERTE FUER ANZEIGE
+> > >EINTRITT.asm(225): error: wrong number of operands
+> > >EINTRITT.asm(225): error: unknown opcode
+     225/       0 :                      	DB 	0E7H
+> > >EINTRITT.asm(226): error: wrong number of operands
+> > >EINTRITT.asm(226): error: unknown opcode
+     226/       0 :                      	DB 	43H
+> > >EINTRITT.asm(227): error: wrong number of operands
+> > >EINTRITT.asm(227): error: unknown opcode
+     227/       0 :                      	DB 	0D6H
+> > >EINTRITT.asm(228): error: wrong number of operands
+> > >EINTRITT.asm(228): error: unknown opcode
+     228/       0 :                      	DB 	10H
+> > >EINTRITT.asm(229): error: wrong number of operands
+> > >EINTRITT.asm(229): error: unknown opcode
+     229/       0 :                      	DB 	0F7H
+> > >EINTRITT.asm(230): error: wrong number of operands
+ AS V1.42 Beta [Bld 82] - source file EINTRITT.asm - page 7 - 4/23/2012 11:09:42
+
+
+> > >EINTRITT.asm(230): error: unknown opcode
+     230/       0 :                      	DB 	0F7H
+> > >EINTRITT.asm(231): error: wrong number of operands
+> > >EINTRITT.asm(231): error: unknown opcode
+     231/       0 :                      	DB 	0E7H
+> > >EINTRITT.asm(232): error: wrong number of operands
+> > >EINTRITT.asm(232): error: unknown opcode
+     232/       0 :                      	DB 	21 		; ANFANGSZUSTAND DES MONITORS
+> > >EINTRITT.asm(233): error: wrong number of operands
+> > >EINTRITT.asm(233): error: unknown opcode
+     233/       0 :                      	DB 	5 		; NMI-ZUSTAND:=RESET
+> > >EINTRITT.asm(234): error: unknown opcode
+     234/       0 :                      	DW 	0000H 		; BREAKPOINT GELOESCHT
+     235/       0 : =$C                 PZAHL 	EQU 	12
+> > >EINTRITT.asm(236): error: wrong number of operands
+> > >EINTRITT.asm(236): error: unknown opcode
+     236/       0 :                      	DB 	0CFH
+> > >EINTRITT.asm(237): error: wrong number of operands
+> > >EINTRITT.asm(237): error: unknown opcode
+     237/       0 :                      	DB 	IOBITS
+> > >EINTRITT.asm(238): error: wrong number of operands
+> > >EINTRITT.asm(238): error: unknown opcode
+     238/       0 :                      	DB 	07H
+     239/       0 :                     	
+     240/       0 :                     	INCLUDE LERNSYSTEMEQU.ASM
+(1)    1/       0 :                     ;*************************************************************************
+(1)    2/       0 :                     ;
+(1)    3/       0 :                     ; REFERENZEN FUER I/O-ADRESSEN, VARIABLENADRESSEN, KODIERUNGEN
+(1)    4/       0 :                     ;
+(1)    5/       0 :                     ;*************************************************************************
+> > >LERNSYSTEMEQU.ASM(6): error: invalid symbol name
+(1)    6/       0 : =???                PIOD1  	EQU  	080H  		; PIO DATENDRESSE SEGMENTE ANZEIGE
+(1)    7/       0 :                     PIOC1  	EQU  	PIOD1+1  	; PIO STEUERADRESSE SEGMENTE ANZEIGE
+> > >LERNSYSTEMEQU.ASM(8): error: invalid symbol name
+(1)    8/       0 : =???                PIOD2  	EQU  	082H  		; PIO DATENADRESSE SYSTEMTEIL
+(1)    9/       0 :                     PIDC2  	EQU  	PIOD2+1  	; PIO STEUERADRESSE SYSTEMTEIL
+> > >LERNSYSTEMEQU.ASM(10): error: invalid symbol name
+(1)   10/       0 : =???                CTC  	EQU  	088H 		; CTC ADRESSE SYSTEMKANAL
+> > >LERNSYSTEMEQU.ASM(11): error: invalid symbol name
+(1)   11/       0 : =???                PIODIG  EQU  	0FCH  		; ADRESSE TREIBER DIGITS
+(1)   12/       0 : =$8                 PROZ  	EQU  	8  		; RELATIVE ADRESSE FUER PROGZU
+(1)   13/       0 : =$9                 NMIZ  	EQU  	9  		; RELATIVE ADRESSE FUER NMIZUS
+(1)   14/       0 : =$A                 BREAK  	EQU  	10  		; RELATIVE ADRESSE FUER BREAKP
+(1)   15/       0 : =$C                 H1  	EQU  	12  		; RELATIVE ADRESSE FUER HR1
+(1)   16/       0 : =$E                 H2  	EQU  	14  		; RELATIVE ADRESSE FUER HR2
+(1)   17/       0 : =$10                H3  	EQU  	16  		; RELATIVE ADRESSE FUER HR3
+(1)   18/       0 : =$12                H4  	EQU  	18  		; RELATIVE ADRESSE FUER HR4
+(1)   19/       0 : =$13                H5  	EQU  	19  		; RELATIVE ADRESSE FUER HR5
+(1)   20/       0 : =$0                 Z1  	EQU  	0  		; KODES FUER DIE MONITORZUSTAENDE
+(1)   21/       0 : =$1                 Z2  	EQU  	1+Z1
+(1)   22/       0 : =$2                 Z3  	EQU  	1+Z2
+(1)   23/       0 : =$3                 Z4A  	EQU  	1+Z3
+(1)   24/       0 : =$4                 Z4  	EQU  	1+Z4A
+(1)   25/       0 : =$5                 Z4C  	EQU  	1+Z4
+(1)   26/       0 : =$6                 Z5  	EQU  	1+Z4C
+(1)   27/       0 : =$7                 Z6  	EQU  	1+Z5
+(1)   28/       0 : =$8                 Z7  	EQU  	1+Z6
+(1)   29/       0 : =$9                 Z8  	EQU  	1+Z7
+(1)   30/       0 : =$A                 Z9  	EQU  	1+Z8
+(1)   31/       0 : =$B                 Z10  	EQU  	1+Z9
+ AS V1.42 Beta [Bld 82] - source file EINTRITT.asm(LERNSYSTEMEQU.ASM) - page 8 - 4/23/2012 11:09:42
+
+
+(1)   32/       0 : =$C                 Z12  	EQU  	1+Z10
+(1)   33/       0 : =$D                 Z13  	EQU  	1+Z12
+(1)   34/       0 : =$E                 Z14  	EQU  	1+Z13
+(1)   35/       0 : =$F                 Z16  	EQU  	1+Z14
+(1)   36/       0 : =$10                Z17  	EQU  	1+Z16
+(1)   37/       0 : =$11                Z18  	EQU  	1+Z17
+(1)   38/       0 : =$12                Z19  	EQU  	1+Z18
+(1)   39/       0 : =$13                Z20  	EQU  	1+Z19
+(1)   40/       0 : =$14                Z21A  	EQU  	1+Z20
+(1)   41/       0 : =$15                Z21  	EQU  	1+Z21A
+(1)   42/       0 : =$16                Z22  	EQU  	1+Z21
+(1)   43/       0 : =$17                Z23  	EQU  	1+Z22
+(1)   44/       0 : =$18                Z24  	EQU  	1+Z23
+(1)   45/       0 : =$19                Z25  	EQU  	1+Z24
+(1)   46/       0 : =$1A                Z25A  	EQU  	1+Z25
+(1)   47/       0 : =$1B                Z34  	EQU  	1+Z25A
+(1)   48/       0 : =$1C                Z35  	EQU  	1+Z34
+(1)   49/       0 : =$1D                Z36  	EQU  	1+Z35
+(1)   50/       0 : =$1E                Z37  	EQU  	1+Z36
+(1)   51/       0 : =$1F                Z38  	EQU  	1+Z37
+(1)   52/       0 : =$20                Z39  	EQU  	1+Z38
+(1)   53/       0 : =$21                Z40  	EQU  	1+Z39
+(1)   54/       0 : =$22                Z41  	EQU  	1+Z40
+(1)   55/       0 : =$23                Z42  	EQU  	1+Z41
+(1)   56/       0 : =$24                Z43  	EQU  	1+Z42
+(1)   57/       0 : =$25                Z44  	EQU  	1+Z43
+(1)   58/       0 : =$26                Z45  	EQU  	1+Z44
+(1)   59/       0 : =$27                Z46  	EQU  	1+Z45
+(1)   60/       0 : =$28                Z47  	EQU  	1+Z46
+(1)   61/       0 : =$29                Z48  	EQU  	1+Z47
+(1)   62/       0 : =$2A                Z49  	EQU  	1+Z48
+(1)   63/       0 : =$2B                Z50  	EQU  	1+Z49
+(1)   64/       0 : =$2C                Z51  	EQU  	1+Z50
+(1)   65/       0 : =$2D                Z52  	EQU  	1+Z51
+(1)   66/       0 : =$2E                Z53  	EQU  	1+Z52
+(1)   67/       0 : =$2F                Z54  	EQU  	1+Z53
+(1)   68/       0 : =$3                 BIA  	EQU  	3  		; DEZIMALPUNKT-BIT DER ANZEIGE
+(1)   69/       0 : =$0                 BIB  	EQU  	0  		; PIO-BIT FUER FERNSCHREIBERANSCHLUSS
+(1)   70/       0 : =$2                 BIC  	EQU  	2  		; PIO-BIT FUER AUSGABE AUF MAGNETBAND
+(1)   71/       0 : =$1                 BID  	EQU  	1  		; PIO-BIT FUER EINGABE VOM MAGNETBAND
+(1)   72/       0 : =$6                 BIE  	EQU  	6  		; PIO-BIT ZUR STEUERUNG VON SCON
+(1)   73/       0 :                     
+     241/       0 :                     	END
+ AS V1.42 Beta [Bld 82] - source file EINTRITT.asm - page 9 - 4/23/2012 11:09:42
+
+
+  symbol table (* = unused):
+  ------------------------
+
+*ARCHITECTURE :  i386-unknown-win32 - | *BIA :                            3 - |
+*BIB :                            0 - | *BIC :                            2 - |
+*BID :                            1 - | *BIE :                            6 - |
+*BIGENDIAN :                      0 - | *BRANCHEXT :                      0 - |
+*BREAK :                          A - | *BREST :                          0 C |
+*BRSYST :                         0 C | *BRUSER :                         0 C |
+*BRUSM1 :                         0 C | *CASESENSITIVE :                  0 - |
+*CONSTPI :        3.141592653589793 - | *DATE :                   4/23/2012 - |
+*FALSE :                          0 - | *FULLPMMU :                       1 - |
+*H1 :                             C - | *H2 :                             E - |
+*H3 :                            10 - | *H4 :                            12 - |
+*H5 :                            13 - | *HAS64 :                          1 - |
+*HASDSP :                         0 - | *HASFPU :                         0 - |
+*HASPMMU :                        0 - | *INEXTMODE :                      0 - |
+*INLWORDMODE :                    0 - | *INMAXMODE :                      0 - |
+*INSRCMODE :                      0 - | *INSUPMODE :                      0 - |
+*IWERTE :                         0 C | *JPTRST :                         0 C |
+*LISTON :                         1 - | *MACEXP :                         1 - |
+*MOMCPU :                     68008 - | *MOMCPUNAME :                 68008 - |
+*MONINT :                         0 C | *MONRM1 :                         0 C |
+*NESTMAX :                      100 - | *NMIM1 :                          0 C |
+*NMIM2 :                          0 C | *NMIM3 :                          0 C |
+*NMIZ :                           9 - | *NORST :                          0 C |
+*PACKING :                        0 - | *PADDING :                        1 - |
+*PROZ :                           8 - | *PZAHL :                          C - |
+*RELAXED :                        0 - | *SPPCKO :                         0 C |
+*TIME :                    11:09:41 - | *TRUE :                           1 - |
+*VERSION :                     142F - |  Z1 :                             0 - |
+ Z10 :                            B - |  Z12 :                            C - |
+ Z13 :                            D - |  Z14 :                            E - |
+ Z16 :                            F - |  Z17 :                           10 - |
+ Z18 :                           11 - |  Z19 :                           12 - |
+ Z2 :                             1 - |  Z20 :                           13 - |
+ Z21 :                           15 - |  Z21A :                          14 - |
+ Z22 :                           16 - |  Z23 :                           17 - |
+ Z24 :                           18 - |  Z25 :                           19 - |
+ Z25A :                          1A - |  Z3 :                             2 - |
+ Z34 :                           1B - |  Z35 :                           1C - |
+ Z36 :                           1D - |  Z37 :                           1E - |
+ Z38 :                           1F - |  Z39 :                           20 - |
+ Z4 :                             4 - |  Z40 :                           21 - |
+ Z41 :                           22 - |  Z42 :                           23 - |
+ Z43 :                           24 - |  Z44 :                           25 - |
+ Z45 :                           26 - |  Z46 :                           27 - |
+ Z47 :                           28 - |  Z48 :                           29 - |
+ Z49 :                           2A - |  Z4A :                            3 - |
+ Z4C :                            5 - |  Z5 :                             6 - |
+ Z50 :                           2B - |  Z51 :                           2C - |
+ Z52 :                           2D - |  Z53 :                           2E - |
+*Z54 :                           2F - |  Z6 :                             7 - |
+ Z7 :                             8 - |  Z8 :                             9 - |
+ Z9 :                             A - |
+
+    103 symbols
+     56 unused symbols
+
+ AS V1.42 Beta [Bld 82] - source file EINTRITT.asm - page 10 - 4/23/2012 11:09:42
+
+
+  codepages:
+  ----------
+
+STANDARD (0 changed characters)
+
+
+0.92 seconds assembly time
+
+    315 lines source file
+      1 pass
+        additional necessary passes not started due to
+        errors, listing possibly incorrect
+    149 errors
+      0 warnings
